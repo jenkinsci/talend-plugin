@@ -24,5 +24,5 @@ Refer to our [contribution guidelines](https://github.com/jenkinsci/.github/blob
 
 ## LICENSE
 
-Licensed under MIT, see [LICENSE](LICENSE.md)
+Licensed under GPL-3.0-only, see [LICENSE](LICENSE.md)
 
