@@ -101,7 +101,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, EnvVars env, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
-        String token = TalendConfiguration.get().getToken();
+        String token = TalendConfiguration.get().getCredentialsid();
         String region = TalendConfiguration.get().getRegion();
         String id = "";
 
@@ -199,7 +199,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
         public ListBoxModel doFillEnvironmentItems(@CheckForNull @AncestorInPath Item context) {
-            String token = TalendConfiguration.get().getToken();
+            String token = TalendConfiguration.get().getCredentialsid();
             String region = TalendConfiguration.get().getRegion();
             ListBoxModel model = new ListBoxModel();
 
@@ -239,7 +239,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
         		System.out.println("environment is null"); 
         		return null;
         	}
-            String token = TalendConfiguration.get().getToken();
+            String token = TalendConfiguration.get().getCredentialsid();
             String region = TalendConfiguration.get().getRegion();
             ListBoxModel model = new ListBoxModel();
 

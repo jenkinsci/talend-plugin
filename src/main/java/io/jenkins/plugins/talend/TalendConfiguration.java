@@ -39,7 +39,7 @@ public class TalendConfiguration extends GlobalConfiguration {
         return ExtensionList.lookupSingleton(TalendConfiguration.class);
     }
 
-    private String ltoken;
+    private String lcredentialsid;
     private String region;
 
     public TalendConfiguration() {
@@ -47,13 +47,13 @@ public class TalendConfiguration extends GlobalConfiguration {
         load();
     }
 
-    public String getToken() {
-        return this.ltoken;
+    public String getCredentialsid() {
+        return this.lcredentialsid;
     }
 
     @DataBoundSetter
-    public void setToken(String value) {
-        this.ltoken = value;
+    public void setCredentialsid(String value) {
+        this.lcredentialsid = value;
         save();
     }
 
@@ -67,16 +67,16 @@ public class TalendConfiguration extends GlobalConfiguration {
         save();
     }
 
-    public ListBoxModel doFillTokenItems(
+    public ListBoxModel doFillCredentialsidItems(
         @AncestorInPath final Item item,
-        @QueryParameter final String value) {
-        return CredentialsHelper.doFillCredentialsIdItems(item, value);
+        @QueryParameter final String credentialsid) {
+        return CredentialsHelper.doFillCredentialsIdItems(item, credentialsid);
     }
 
-    public FormValidation doCheckToken(
+    public FormValidation doCheckCredentialsid(
         @AncestorInPath final Item item,
-        @QueryParameter final String value) {
-        return CredentialsHelper.doCheckFillCredentialsId(item, value);
+        @QueryParameter final String credentialsid) {
+        return CredentialsHelper.doCheckFillCredentialsId(item, credentialsid);
     }
     
     public FormValidation doCheckRegion(@QueryParameter String value) {
@@ -86,15 +86,16 @@ public class TalendConfiguration extends GlobalConfiguration {
         return FormValidation.ok();
     }
     
-	public FormValidation doTestConnection(@AncestorInPath final Item item, @QueryParameter("token") final String token,
-			@QueryParameter("credentialsid") final String reinier, @QueryParameter("region") final String region)
+	public FormValidation doTestConnection(@AncestorInPath final Item item, 
+			@QueryParameter("credentialsid") final String credentialsid, 
+			@QueryParameter("region") final String region)
 			throws IOException, ServletException {
 
 		/*
 		 * TODO: This only works once, because the static method .instance caches the connection parameters
 		 * 
 		 */
-		Optional<StringCredentials> optStringCredentials = CredentialsHelper.findCredentials(item, token);
+		Optional<StringCredentials> optStringCredentials = CredentialsHelper.findCredentials(item, credentialsid);
 
 		TalendCredentials credentials = null;
 		WorkspaceService workspaceService = null;
@@ -112,6 +113,6 @@ public class TalendConfiguration extends GlobalConfiguration {
 			workspaceService = null;
 			optStringCredentials = null;
 		}
-		return FormValidation.ok();
+		return FormValidation.ok("Connected to Talend Cloud succesfully");
 	}
 }

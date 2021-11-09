@@ -45,17 +45,17 @@ import jenkins.model.GlobalConfiguration;
 import jenkins.tasks.SimpleBuildStep;
 
 @Extension
-public class RunJobBuilder extends Builder implements SimpleBuildStep {
+public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 	private static final Logger LOGGER = Logger.getLogger(GlobalConfiguration.class.getName());
 
 	private String tEnvironment;
 	private String tWorkspace;
-	private String tJobid;
+	private String tTaskid;
 	private String tJobname;
 
 	@DataBoundConstructor
-	public RunJobBuilder() {
-		this.tJobid = "";
+	public RunTaskBuilder() {
+		this.tTaskid = "";
 		this.tJobname = "";
 	}
 
@@ -77,13 +77,13 @@ public class RunJobBuilder extends Builder implements SimpleBuildStep {
 		this.tWorkspace = workspace;
 	}
 
-	public String getJobid() {
-		return tJobid;
+	public String getTaskid() {
+		return tTaskid;
 	}
 
 	@DataBoundSetter
-	public void setJobid(String jobid) {
-		this.tJobid = jobid;
+	public void setTaskid(String value) {
+		this.tTaskid = value;
 	}
 
 	public String getJobname() {
@@ -91,14 +91,14 @@ public class RunJobBuilder extends Builder implements SimpleBuildStep {
 	}
 
 	@DataBoundSetter
-	public void setJobname(String jobname) {
-		this.tJobname = jobname;
+	public void setJobname(String value) {
+		this.tJobname = value;
 	}
 
 	@Override
 	public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
 			throws InterruptedException, IOException {
-		String token = TalendConfiguration.get().getToken();
+		String token = TalendConfiguration.get().getCredentialsid();
 		String region = TalendConfiguration.get().getRegion();
 		String id = "";
 		Task task = null;
@@ -109,7 +109,7 @@ public class RunJobBuilder extends Builder implements SimpleBuildStep {
         TalendCredentials credentials = new TalendBearerAuth(api);
 
         listener.getLogger().println("region=" + region);
-		listener.getLogger().println("jobid=" + tJobid);
+		listener.getLogger().println("taskid=" + tTaskid);
 		listener.getLogger().println("jobname=" + tJobname);
 		listener.getLogger().println("environment=" + tEnvironment);
 		listener.getLogger().println("workspace=" + tWorkspace);
@@ -119,8 +119,8 @@ public class RunJobBuilder extends Builder implements SimpleBuildStep {
 					TalendCloudRegion.valueOf(region));
 
 			ExecutableTask executableTask = ExecutableTask.instance(credentials, TalendCloudRegion.valueOf(region));
-			if (!tJobid.isEmpty()) {
-				task = executableTask.getById(tJobid);
+			if (!tTaskid.isEmpty()) {
+				task = executableTask.getById(tTaskid);
 				id = task.getId();
 			} else if (tJobname.isEmpty()) {
 				WorkspaceService workspaceService = WorkspaceService.instance(credentials,
@@ -141,10 +141,10 @@ public class RunJobBuilder extends Builder implements SimpleBuildStep {
 				id = task.getExecutable();
 
 			} else {
-				listener.getLogger().println("No Jobid or Jobname provided!");
+				listener.getLogger().println("No Taskid or Jobname provided!");
 			}
 
-			listener.getLogger().println("Found Job: " + id);
+			listener.getLogger().println("Found Task: " + id);
 
 			ExecutionRequest executionRequest = new ExecutionRequest();
 			executionRequest.setExecutable(id);
@@ -174,11 +174,11 @@ public class RunJobBuilder extends Builder implements SimpleBuildStep {
 	}
 
 	@Extension
-	@Symbol("runJob")
+	@Symbol("runTask")
 	public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
 		public ListBoxModel doFillEnvironmentItems(@CheckForNull @AncestorInPath Item context) {
-			String token = TalendConfiguration.get().getToken();
+			String token = TalendConfiguration.get().getCredentialsid();
 			String region = TalendConfiguration.get().getRegion();
 			ListBoxModel model = new ListBoxModel();
 
@@ -217,7 +217,7 @@ public class RunJobBuilder extends Builder implements SimpleBuildStep {
 				System.out.println("environment is null");
 				return null;
 			}
-			String token = TalendConfiguration.get().getToken();
+			String token = TalendConfiguration.get().getCredentialsid();
 			String region = TalendConfiguration.get().getRegion();
 			ListBoxModel model = new ListBoxModel();
 
@@ -253,12 +253,12 @@ public class RunJobBuilder extends Builder implements SimpleBuildStep {
 			return model;
 		}
 
-		public ListBoxModel doFillJobidItems(@QueryParameter String environment, @QueryParameter String workspace) {
+		public ListBoxModel doFillTaskidItems(@QueryParameter String environment, @QueryParameter String workspace) {
 			if (environment == null) {
 				System.out.println("environment is null");
 				return null;
 			}
-			String token = TalendConfiguration.get().getToken();
+			String token = TalendConfiguration.get().getCredentialsid();
 			String region = TalendConfiguration.get().getRegion();
 			ListBoxModel model = new ListBoxModel();
 
@@ -285,8 +285,8 @@ public class RunJobBuilder extends Builder implements SimpleBuildStep {
 		}
 
 		public FormValidation doCheckName(@QueryParameter String environment, @QueryParameter String workspace,
-				@QueryParameter String job) throws IOException, ServletException {
-			if (job.length() == 0)
+				@QueryParameter String task) throws IOException, ServletException {
+			if (task.length() == 0)
 				return FormValidation.warning("No Job");
 			if (environment.length() < 4)
 				return FormValidation.warning("No Env");
@@ -303,7 +303,7 @@ public class RunJobBuilder extends Builder implements SimpleBuildStep {
 
 		@Override
 		public String getDisplayName() {
-			return Messages.RunJobBuilder_DescriptorImpl_DisplayName();
+			return Messages.RunTaskBuilder_DescriptorImpl_DisplayName();
 		}
 
 	}

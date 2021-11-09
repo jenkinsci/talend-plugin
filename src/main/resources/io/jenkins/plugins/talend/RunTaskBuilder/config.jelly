@@ -14,7 +14,7 @@
        <f:select field="environment" default="" title="${%Environment}" description="${%EnvironmentDescr}" /><br />
         ${%Workspace}<br />
       <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" />
-        ${%Job}<br />
-      <f:select field="jobid" default="" title="${%Job}" description="${%JobDescr}" />
+        ${%Task}<br />
+      <f:select field="taskid" default="" title="${%Task}" description="${%TaskDescr}" />
     </f:entry>
  </j:jelly>
