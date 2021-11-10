@@ -61,6 +61,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 @Extension
 public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
+	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 	private static final Logger LOGGER = Logger.getLogger(GlobalConfiguration.class.getName());
 
     private String tEnvironment;
@@ -197,6 +198,8 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     @Symbol("CreateTask")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings
+    	private static final Logger LOGGER = Logger.getLogger(GlobalConfiguration.class.getName());
 
         public ListBoxModel doFillEnvironmentItems(@CheckForNull @AncestorInPath Item context) {
             String token = TalendConfiguration.get().getCredentialsid();
@@ -227,7 +230,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             	}          
             } 
     		catch(TalendRestException | IOException ex){
-            	System.out.println(ex.getMessage());
+            	LOGGER.warning(ex.getMessage());
             	return null;
             }
 
@@ -236,7 +239,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 
         public ListBoxModel doFillWorkspaceItems(@QueryParameter String environment) {
         	if ((environment == null) || (environment.isEmpty())) {
-        		System.out.println("environment is null"); 
+            	LOGGER.warning("environment is null");
         		return null;
         	}
             String token = TalendConfiguration.get().getCredentialsid();
@@ -271,7 +274,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             
             } 
     		catch(TalendRestException | IOException ex){
-    			System.out.println(ex.getMessage());
+    			LOGGER.warning(ex.getMessage());
             	return null;
             }
 

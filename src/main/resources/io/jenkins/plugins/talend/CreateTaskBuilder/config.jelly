@@ -6,7 +6,6 @@
        <f:select field="environment" default="" title="${%Environment}" description="${%EnvironmentDescr}" /><br />
         ${%Workspace}<br />
       <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" />
-        ${%Job}<br />
     </f:entry>
     <f:entry field="artifactname" default="" title="${%Artifact}" description="${%ArtifactDescr}" >
       <f:textbox />
