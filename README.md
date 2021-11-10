@@ -19,10 +19,15 @@ Now you are ready to create your first job.
 Create a Freestyle Job and add the build task "Create Talend Task". You can select the artifact that you want to base your task on 
 by first selecting the Environment, then the Workspace and then the Artifact.
 
+![Create a New Task Image](docs/images/createtask.png "Create a New Task")
+
 ### Run a Task
 
 Create a Freestyle Job and add the build task "Run Task". You can select the task by first selecting the 
 Environment, then the Workspace and then the Task.
+
+![Run a Task Image](docs/images/runtask.png "Run a Task")
+
 
 ## Pipeline integration
 
