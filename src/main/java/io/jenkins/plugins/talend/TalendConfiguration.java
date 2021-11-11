@@ -6,6 +6,7 @@ import hudson.model.Item;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.GlobalConfiguration;
+import jenkins.model.Jenkins;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.verb.POST;
 
 import com.talend.tmc.dom.Workspace;
 import com.talend.tmc.services.TalendBearerAuth;
@@ -86,10 +88,12 @@ public class TalendConfiguration extends GlobalConfiguration {
         return FormValidation.ok();
     }
     
+    @POST
 	public FormValidation doTestConnection(@AncestorInPath final Item item, 
 			@QueryParameter("credentialsid") final String credentialsid, 
 			@QueryParameter("region") final String region)
 			throws IOException, ServletException {
+		Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
 		/*
 		 * TODO: This only works once, because the static method .instance caches the connection parameters
