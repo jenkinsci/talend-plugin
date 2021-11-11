@@ -12,6 +12,11 @@ The Talend plugin connects your Jenkins to [Talend Cloud](https://cloud.talend.c
 After installation, first you must configure your connection to Talend Cloud. On the Configure System page of your Jenkins server,
 add the Talend Cloud Personal Access Token and select the Talend Cloud Environment of your Talend Cloud instance.
 
+There is only 1 access token for your whole Jenkins installation, so any Jenkins user that can create Builds or Pipelines can access
+Talend Cloud with these credentials!
+
+![Configuration](docs/images/globalconfig.png "Global Configuration")
+
 Now you are ready to create your first job.
 
 ### Create a Task
