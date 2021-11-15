@@ -54,14 +54,11 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 	private String tWorkspace;
 	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings
-	private String tTaskid;
-	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings
-	private String tJobname;
+	private String tTask;
 
 	@DataBoundConstructor
 	public RunTaskBuilder() {
-		this.tTaskid = "";
-		this.tJobname = "";
+		this.tTask = "";
 	}
 
 	public String getEnvironment() {
@@ -69,8 +66,8 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 	}
 
 	@DataBoundSetter
-	public void setEnvironment(String environment) {
-		this.tEnvironment = environment;
+	public void setEnvironment(String value) {
+		this.tEnvironment = value;
 	}
 
 	public String getWorkspace() {
@@ -78,58 +75,44 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 	}
 
 	@DataBoundSetter
-	public void setWorkspace(String workspace) {
-		this.tWorkspace = workspace;
+	public void setWorkspace(String value) {
+		this.tWorkspace = value;
 	}
 
-	public String getTaskid() {
-		return tTaskid;
-	}
-
-	@DataBoundSetter
-	public void setTaskid(String value) {
-		this.tTaskid = value;
-	}
-
-	public String getJobname() {
-		return tJobname;
+	public String getTask() {
+		return tTask;
 	}
 
 	@DataBoundSetter
-	public void setJobname(String value) {
-		this.tJobname = value;
+	public void setTask(String value) {
+		this.tTask = value;
 	}
 
 	@Override
 	public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
 			throws InterruptedException, IOException {
-		String token = TalendConfiguration.get().getCredentialsid();
-		String region = TalendConfiguration.get().getRegion();
+		listener.getLogger().println("*** RUNTASK ***");
+		listener.getLogger().println("jobname=" + tTask);
+		listener.getLogger().println("environment=" + tEnvironment);
+		listener.getLogger().println("workspace=" + tWorkspace);
+		listener.getLogger().println("*** RUNTASK ***");
 		String id = "";
 		Task task = null;
 
-        StringCredentials stringCredentials = CredentialsHelper.lookupSystemCredentials(token);
+		TalendCredentials credentials = TalendLookupHelper.getTalendCredentials();
+		TalendCloudRegion region = TalendLookupHelper.getTalendRegion();
 
-		String api = stringCredentials.getSecret().getPlainText();
-        TalendCredentials credentials = new TalendBearerAuth(api);
-
-        listener.getLogger().println("region=" + region);
-		listener.getLogger().println("taskid=" + tTaskid);
-		listener.getLogger().println("jobname=" + tJobname);
+		listener.getLogger().println("jobname=" + tTask);
 		listener.getLogger().println("environment=" + tEnvironment);
 		listener.getLogger().println("workspace=" + tWorkspace);
 
 		try {
-			ExecutionService executionService = ExecutionService.instance(credentials,
-					TalendCloudRegion.valueOf(region));
+			ExecutionService executionService = ExecutionService.instance(credentials, region);
 
-			ExecutableTask executableTask = ExecutableTask.instance(credentials, TalendCloudRegion.valueOf(region));
-			if (!tTaskid.isEmpty()) {
-				task = executableTask.getById(tTaskid);
-				id = task.getId();
-			} else if (tJobname.isEmpty()) {
-				WorkspaceService workspaceService = WorkspaceService.instance(credentials,
-						TalendCloudRegion.valueOf(region));
+			ExecutableTask executableTask = ExecutableTask.instance(credentials, region);
+			if (!tTask.isEmpty()) {
+			   
+				WorkspaceService workspaceService = WorkspaceService.instance(credentials, region);
 				SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
 				String query = fiql.is("name").equalTo(tWorkspace).and().is("environment.name").equalTo(tEnvironment)
 						.query();
@@ -140,13 +123,13 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 				String workspaceId = workspaces[0].getId();
 				listener.getLogger().println("workspaceId=" + workspaceId);
 				Task[] tasks = null;
-				tasks = executableTask.getByName(tJobname, workspaceId);
+				tasks = executableTask.getByName(tTask, workspaceId);
 				task = tasks[0];
 				listener.getLogger().println("task=" + task.getName());
 				id = task.getExecutable();
 
 			} else {
-				listener.getLogger().println("No Taskid or Jobname provided!");
+				listener.getLogger().println("No Task provided!");
 			}
 
 			listener.getLogger().println("Found Task: " + id);
@@ -166,7 +149,7 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 			 * 
 			 */
 			ExecutionResponse executionResponse = executionService.post(executionRequest);
-			listener.getLogger().println("Talend Job Started: " + executionResponse.getExecutionId());
+			listener.getLogger().println("Talend Task Started: " + executionResponse.getExecutionId());
 
 			Thread.sleep(10); // to include the InterruptedException
 		} catch (TalendRestException | IOException | InterruptedException ex) {
@@ -181,111 +164,17 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 	@Extension
 	@Symbol("runTask")
 	public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
-    	private static final Logger LOGGER = Logger.getLogger(GlobalConfiguration.class.getName());
 
 		public ListBoxModel doFillEnvironmentItems(@CheckForNull @AncestorInPath Item context) {
-			String token = TalendConfiguration.get().getCredentialsid();
-			String region = TalendConfiguration.get().getRegion();
-			ListBoxModel model = new ListBoxModel();
-
-			WorkspaceService workspaceService = null;
-
-	        StringCredentials stringCredentials = CredentialsHelper.lookupSystemCredentials(token);
-
-			String api = stringCredentials.getSecret().getPlainText();
-	        TalendCredentials credentials = new TalendBearerAuth(api);
-
-			workspaceService = WorkspaceService.instance(credentials, TalendCloudRegion.valueOf(region));
-			try {
-				Workspace[] workSpaces = workspaceService.get();
-				java.util.List<String> idList = new ArrayList<String>();
-				for (Workspace space : workSpaces) {
-					String id = space.getEnvironment().getId();
-					java.util.List<String> idFilter = idList.stream().filter(x -> x.equals(id))
-							.collect(Collectors.toList());
-					if (idFilter.size() == 0) {
-						LOGGER.info("environment name = " + space.getEnvironment().getName());
-						LOGGER.info("environment id = " + id);
-						model.add(space.getEnvironment().getName(), id);
-						idList.add(id);
-					}
-				}
-			} catch (TalendRestException | IOException ex) {
-				LOGGER.warning(ex.getMessage());
-				return null;
-			}
-
-			return model;
+			return TalendLookupHelper.getEnvironmentList();
 		}
 
 		public ListBoxModel doFillWorkspaceItems(@QueryParameter String environment) {
-			if (environment == null) {
-				LOGGER.warning("environment is null");
-				return null;
-			}
-			String token = TalendConfiguration.get().getCredentialsid();
-			String region = TalendConfiguration.get().getRegion();
-			ListBoxModel model = new ListBoxModel();
-
-			WorkspaceService workspaceService = null;
-
-	        StringCredentials stringCredentials = CredentialsHelper.lookupSystemCredentials(token);
-
-			String api = stringCredentials.getSecret().getPlainText();
-	        TalendCredentials credentials = new TalendBearerAuth(api);
-
-			workspaceService = WorkspaceService.instance(credentials, TalendCloudRegion.valueOf(region));
-			try {
-				SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
-				String query = fiql.is("environment.id").equalTo(environment).query();
-				Workspace[] workSpaces = workspaceService.get(query);
-				java.util.List<String> idList = new ArrayList<String>();
-				for (Workspace space : workSpaces) {
-					String id = space.getId();
-					String envId = space.getEnvironment().getId();
-					java.util.List<String> idFilter = idList.stream().filter(x -> x.contains(envId))
-							.collect(Collectors.toList());
-					if (idFilter.size() == 0) {
-						model.add(space.getName() + " - " + space.getOwner(), id);
-					}
-					idList.add(id);
-				}
-
-			} catch (TalendRestException | IOException ex) {
-				LOGGER.warning(ex.getMessage());
-				return null;
-			}
-
-			return model;
+			return TalendLookupHelper.getWorkspaceList(environment);
 		}
 
-		public ListBoxModel doFillTaskidItems(@QueryParameter String environment, @QueryParameter String workspace) {
-			if (environment == null) {
-				LOGGER.warning("environment is null");
-				return null;
-			}
-			String token = TalendConfiguration.get().getCredentialsid();
-			String region = TalendConfiguration.get().getRegion();
-			ListBoxModel model = new ListBoxModel();
-
-	        StringCredentials stringCredentials = CredentialsHelper.lookupSystemCredentials(token);
-
-			String api = stringCredentials.getSecret().getPlainText();
-	        TalendCredentials credentials = new TalendBearerAuth(api);
-
-	        ExecutableTaskService executableTaskService = ExecutableTaskService.instance(credentials, TalendCloudRegion.valueOf(region));
-			try {
-				Executable[] Executables = executableTaskService
-						.getByQuery("environmentId=" + environment + "&workspaceId=" + workspace);
-				for (Executable exec : Executables) {
-					model.add(exec.getName(), exec.getExecutable());
-				}
-			} catch (TalendRestException | IOException ex) {
-				LOGGER.warning(ex.getMessage());
-				return null;
-			}
-
-			return model;
+		public ListBoxModel doFillTaskItems(@QueryParameter String environment, @QueryParameter String workspace) {
+			return TalendLookupHelper.getTaskList(environment, workspace);
 		}
 
 		public FormValidation doCheckName(@QueryParameter String environment, @QueryParameter String workspace,

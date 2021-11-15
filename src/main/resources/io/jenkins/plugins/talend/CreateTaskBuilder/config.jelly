@@ -6,7 +6,7 @@
         ${%Workspace}<br />
       <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" />
     </f:entry>
-    <f:entry field="artifactname" default="" title="${%Artifact}" description="${%ArtifactDescr}" >
+    <f:entry field="artifact" default="" title="${%Artifact}" description="${%ArtifactDescr}" >
       <f:textbox />
     </f:entry>
  </j:jelly>
