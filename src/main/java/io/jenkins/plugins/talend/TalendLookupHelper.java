@@ -41,8 +41,6 @@ public class TalendLookupHelper {
 				java.util.List<String> idFilter = idList.stream().filter(x -> x.equals(id))
 						.collect(Collectors.toList());
 				if (idFilter.size() == 0) {
-					LOGGER.info("environment name = " + space.getEnvironment().getName());
-					LOGGER.info("environment id = " + id);
 					model.add(space.getEnvironment().getName(), space.getEnvironment().getName());
 					idList.add(id);
 				}
@@ -175,13 +173,9 @@ public class TalendLookupHelper {
     	String query = fiql.is("workspace.environment.id").equalTo(environment).and().is("status").equalTo("PAIRED").query();
     	try {
 	    	Engine[] engines = engineService.get(query);
-	    	LOGGER.info("We found engines");
 	    	if (engines.length > 0 ) {
 	    		Engine firstengine = engines[0];
-	    		LOGGER.info("engineid = " + firstengine.getId());
-	    		
 	        	engineId = engines[0].getId();
-	        	LOGGER.info("engineid = " + engineId);            		
 	    	}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
