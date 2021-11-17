@@ -68,7 +68,7 @@ public class TalendConfiguration extends GlobalConfiguration {
         this.region = region;
         save();
     }
-
+    
     public ListBoxModel doFillCredentialsidItems(
         @AncestorInPath final Item item,
         @QueryParameter final String credentialsid) {
