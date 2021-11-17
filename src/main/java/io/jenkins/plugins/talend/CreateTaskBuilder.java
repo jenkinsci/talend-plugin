@@ -11,6 +11,7 @@ import hudson.model.AbstractProject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.Item;
+import hudson.model.Result;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.RelativePath;
@@ -23,11 +24,8 @@ import com.talend.tmc.dom.TaskNew;
 import com.talend.tmc.dom.Trigger;
 import com.talend.tmc.dom.Runtime;
 import com.talend.tmc.dom.Artifact;
-import com.talend.tmc.dom.Engine;
 import com.talend.tmc.dom.RunConfig;
 import com.talend.tmc.dom.Task;
-import com.talend.tmc.dom.Workspace;
-import com.talend.tmc.services.TalendBearerAuth;
 import com.talend.tmc.services.TalendCloudRegion;
 import com.talend.tmc.services.TalendCredentials;
 import com.talend.tmc.services.TalendError;
@@ -35,28 +33,20 @@ import com.talend.tmc.services.TalendRestException;
 import com.talend.tmc.services.artifacts.ArtifactService;
 import com.talend.tmc.services.executables.ExecutableRunConfig;
 import com.talend.tmc.services.executables.ExecutableTask;
-import com.talend.tmc.services.runtime.EngineService;
-import com.talend.tmc.services.workspaces.WorkspaceService;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import org.kohsuke.stapler.AncestorInPath;
 
-import org.apache.cxf.jaxrs.ext.search.client.SearchConditionBuilder;
-
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import jenkins.model.GlobalConfiguration;
 import jenkins.tasks.SimpleBuildStep;
 
 import org.jenkinsci.Symbol;
-import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundSetter;
 
 @Extension
@@ -67,6 +57,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     private String tEnvironment;
     private String tWorkspace;
     private String tArtifact;
+	private String tParameters;
 
     @DataBoundConstructor
     public CreateTaskBuilder() {
@@ -100,6 +91,15 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
         this.tArtifact = value;
     }
     
+    public String getParameters () {
+        return this.tParameters;
+    }
+
+    @DataBoundSetter
+    public void setParameters(String value) {
+    	tParameters = value;
+    }
+
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, EnvVars env, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
 		listener.getLogger().println("*** CREATETASK ***");
@@ -143,7 +143,22 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
         		AutoUpgradeInfoMap.put("overrideWithDefaultParameters", "false");
         		newTask.setAutoUpgradeInfo(AutoUpgradeInfoMap);
 
-        		Task createdTask = executableTask.create(newTask);
+				String[] values = tParameters.split("\n");
+				Map<String, String> parameters = new HashMap<>();
+				for (int i = 0; i < values.length; i++) {
+					if (values[i].indexOf("=") > 0 ) {
+						String key =values[i].split("=")[0].trim();
+						String value =values[i].split("=")[1].trim();
+						if (key.length() > 0 && value.length() > 0) {
+							parameters.put(key, value);
+						}
+					}
+				}
+				if (parameters.size() > 0) {
+					newTask.setParameters(parameters);
+				}
+
+				Task createdTask = executableTask.create(newTask);
 
         		id = createdTask.getId();
             	listener.getLogger().println("New Task has Id =" + id);
@@ -176,10 +191,11 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             Thread.sleep(10);  // to include the InterruptedException
         } catch(TalendRestException | IOException | InterruptedException ex){
         	listener.getLogger().println(ex.getMessage());
-        	
+        	run.setResult(Result.FAILURE);
         }
           catch(Exception e) {
-        	  listener.getLogger().println(e.getMessage());
+        	listener.getLogger().println(e.getMessage());
+        	run.setResult(Result.FAILURE);
           }
     }
 
@@ -197,18 +213,33 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 			return TalendLookupHelper.getWorkspaceList(environment);
 		}
             	    	
-        public FormValidation doCheckName(@QueryParameter String environment, @QueryParameter String workspace, @QueryParameter String artifactname )
+        public FormValidation doCheckArtifact(@QueryParameter String artifact)
                 throws IOException, ServletException {
-            if (artifactname.length() == 0)
-                return FormValidation.warning("No Artifactname");
-            if (environment.length() < 4)
-                return FormValidation.warning("No Env");
-            if (workspace.length() < 4) {
-                return FormValidation.warning("No Workspace");
-            }
+            if (artifact.length() == 0)
+                return FormValidation.warning("Artifactname is missing");
+			if (!artifact.matches("[a-zA-Z0-9_]+")) {
+				return FormValidation.warning("Artifact name may only contain characters, numbers and underscores.");
+			}
             return FormValidation.ok();
         }
 
+        public FormValidation doCheckParameters(@QueryParameter String parameters)
+			throws IOException, ServletException {
+			if (!parameters.isEmpty() && (parameters.indexOf("=") <= 0)) {
+				return FormValidation.warning("Invalid Parameters");
+			}
+			String[] values = parameters.split("\n");
+			for (int i = 0; i < values.length; i++) {
+				if (values[i].indexOf("=") > 0 ) {
+					String key =values[i].split("=")[0].trim();
+					if (!key.matches("[a-zA-Z0-9_]+")) {
+						return FormValidation.warning("Keys may only contain characters, numbers and underscores: '" + key + "'");
+					}
+				}
+			}
+			return FormValidation.ok();
+        }
+        
         @Override
         public boolean isApplicable(@SuppressWarnings("rawtypes") Class<? extends AbstractProject> aClass) {
             return true;

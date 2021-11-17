@@ -9,4 +9,7 @@
     <f:entry field="artifact" default="" title="${%Artifact}" description="${%ArtifactDescr}" >
       <f:textbox />
     </f:entry>
+    <f:entry field="parameters" default="" title="${%Parameters}" description="${%ParametersDescr}" >
+      <f:textarea />
+    </f:entry>
  </j:jelly>
