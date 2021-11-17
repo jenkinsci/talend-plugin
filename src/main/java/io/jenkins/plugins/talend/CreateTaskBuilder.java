@@ -22,6 +22,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import com.talend.tmc.dom.TaskNew;
 import com.talend.tmc.dom.Trigger;
+import com.talend.tmc.dom.enums.ArtifactType;
 import com.talend.tmc.dom.Runtime;
 import com.talend.tmc.dom.Artifact;
 import com.talend.tmc.dom.RunConfig;
@@ -57,7 +58,11 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     private String tEnvironment;
     private String tWorkspace;
     private String tArtifact;
-	private String tParameters;
+    private String tRuntimeType;
+    private String tRuntime;
+	private String tParameters = "";
+	private String tAutoUpgradable = "false";
+	private String tOverrideWithDefaultParameters = "false";
 
     @DataBoundConstructor
     public CreateTaskBuilder() {
@@ -87,10 +92,28 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     }
 
     @DataBoundSetter
+    public void setRuntimeType(String value) {
+        this.tRuntimeType = value;
+    }
+
+    public String getRuntimeType() {
+        return tRuntimeType;
+    }
+
+    @DataBoundSetter
+    public void setRuntime(String value) {
+        this.tRuntime = value;
+    }
+
+    public String getRuntime() {
+        return tRuntime;
+    }
+
+    @DataBoundSetter
     public void setArtifact(String value) {
         this.tArtifact = value;
     }
-    
+
     public String getParameters () {
         return this.tParameters;
     }
@@ -100,13 +123,30 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     	tParameters = value;
     }
 
+    public boolean getAutoUpgradable () {
+        return this.tAutoUpgradable.equals("true");
+    }
+
+    @DataBoundSetter
+    public void setAutoUpgradable(boolean value) {
+    	tAutoUpgradable = (value == true) ? "true" : "false";
+    }
+
+    public boolean getOverrideWithDefaultParameters () {
+        return this.tOverrideWithDefaultParameters.equals("true");
+    }
+
+    @DataBoundSetter
+    public void setOverrideWithDefaultParameters(boolean value) {
+    	tOverrideWithDefaultParameters = (value == true) ? "true" : "false";
+    }
+
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, EnvVars env, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
 		listener.getLogger().println("*** CREATETASK ***");
 		listener.getLogger().println("artifactname=" + tArtifact);
 		listener.getLogger().println("environment=" + tEnvironment);
 		listener.getLogger().println("workspace=" + tWorkspace);
-		listener.getLogger().println("*** CREATETASK ***");
         String id = "";
 
 		TalendCredentials credentials = TalendLookupHelper.getTalendCredentials();
@@ -139,14 +179,14 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
         		newTask.setArtifact(artifactMap);
 
         		Map<String, String> AutoUpgradeInfoMap = new HashMap<>();
-        		AutoUpgradeInfoMap.put("autoUpgradable", "true");
-        		AutoUpgradeInfoMap.put("overrideWithDefaultParameters", "false");
+        		AutoUpgradeInfoMap.put("autoUpgradable", tAutoUpgradable);
+        		AutoUpgradeInfoMap.put("overrideWithDefaultParameters", tOverrideWithDefaultParameters);
         		newTask.setAutoUpgradeInfo(AutoUpgradeInfoMap);
 
 				String[] values = tParameters.split("\n");
 				Map<String, String> parameters = new HashMap<>();
 				for (int i = 0; i < values.length; i++) {
-					if (values[i].indexOf("=") > 0 ) {
+					if (!(values[i].indexOf("=") < 0) ) {
 						String key =values[i].split("=")[0].trim();
 						String value =values[i].split("=")[1].trim();
 						if (key.length() > 0 && value.length() > 0) {
@@ -165,7 +205,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             	listener.getLogger().println("Going to add RunConfig with default values to the task");
             	listener.getLogger().println("The trigger is MANUAL and we take the first Remote engine in the workspace");
 
-            	String engineId = TalendLookupHelper.getFirstEngineId(environmentId);
+            	String engineId = TalendLookupHelper.getRemoteEngineIdByName(tEnvironment, tRuntime);
             	if (!engineId.isEmpty()) {
                 	RunConfig runConfig = new RunConfig();
                 	Trigger trigger = new Trigger();
@@ -173,7 +213,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
                 	runConfig.setTrigger(trigger);
                 	Runtime runtime = new Runtime();
                 	runtime.setId(engineId);
-                	runtime.setType("REMOTE_ENGINE");
+                	runtime.setType(tRuntimeType);
                 	runConfig.setRuntime(runtime);
                 	// This can only be set on Clusters
 //	                	runConfig.setParallelExecutionAllowed("false");
@@ -188,7 +228,10 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
         	} else if (artifacts.length == 0) {
             	listener.getLogger().println("Artifact " + tArtifact + " Not Found");
         	}
+    		listener.getLogger().println("*** CREATETASK ***");
             Thread.sleep(10);  // to include the InterruptedException
+        } catch(RuntimeException ex){
+        	throw ex;
         } catch(TalendRestException | IOException | InterruptedException ex){
         	listener.getLogger().println(ex.getMessage());
         	run.setResult(Result.FAILURE);
@@ -213,7 +256,33 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 			return TalendLookupHelper.getWorkspaceList(environment);
 		}
             	    	
-        public FormValidation doCheckArtifact(@QueryParameter String artifact)
+		public ListBoxModel doFillRuntimeTypeItems(@QueryParameter String environment) {
+            ListBoxModel model = new ListBoxModel();
+            model.add("Cloud", "CLOUD");
+            model.add("Remote Engine", "REMOTE_ENGINE");
+            model.add("Cluster", "REMOTE_ENGINE_CLUSTER");
+            model.add("Cloud Exclusive","CLOUD_EXCLUSIVE");
+            return model;
+		}
+
+		public ListBoxModel doFillRuntimeItems(@QueryParameter String environment, @QueryParameter String runtimeType) {
+            ListBoxModel model = new ListBoxModel();
+			
+			 switch (runtimeType) {
+	            case "CLOUD":  			model.add("Not Implemented", "NOT");
+	                     				break;
+	            case "REMOTE_ENGINE":	model = TalendLookupHelper.getRemoteEngineList(environment);
+	                     				break;
+	            case "REMOTE_ENGINE_CLUSTER":	model.add("Not Implemented", "NOT");
+ 										break;
+	            case "CLOUD_EXCLUSIVE":	model.add("Not Implemented", "NOT");
+	            						break;
+	            default: model.add("Not Implemented", "NOT");
+			 }
+			 return model; 
+		}
+
+		public FormValidation doCheckArtifact(@QueryParameter String artifact)
                 throws IOException, ServletException {
             if (artifact.length() == 0)
                 return FormValidation.warning("Artifactname is missing");
@@ -225,12 +294,15 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 
         public FormValidation doCheckParameters(@QueryParameter String parameters)
 			throws IOException, ServletException {
-			if (!parameters.isEmpty() && (parameters.indexOf("=") <= 0)) {
+			if (!parameters.isEmpty() && (parameters.indexOf("=") < 0)) {
+				return FormValidation.warning("Invalid Parameters");
+			}
+			if (!parameters.isEmpty() && (parameters.indexOf("=") == 0)) {
 				return FormValidation.warning("Invalid Parameters");
 			}
 			String[] values = parameters.split("\n");
 			for (int i = 0; i < values.length; i++) {
-				if (values[i].indexOf("=") > 0 ) {
+				if (!(values[i].indexOf("=") < 0)) {
 					String key =values[i].split("=")[0].trim();
 					if (!key.matches("[a-zA-Z0-9_]+")) {
 						return FormValidation.warning("Keys may only contain characters, numbers and underscores: '" + key + "'");

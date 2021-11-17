@@ -5,11 +5,21 @@
        <f:select field="environment" default="" title="${%Environment}" description="${%EnvironmentDescr}" /><br />
         ${%Workspace}<br />
       <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" />
+        ${%RuntimeType}<br />
+      <f:select field="runtimeType" default="" title="${%RuntimeType}" description="${%RuntimeTypeDescr}" />
+        ${%Workspace}<br />
+      <f:select field="runtime" default="" title="${%Runtime}" description="${%RuntimeDescr}" />
     </f:entry>
     <f:entry field="artifact" default="" title="${%Artifact}" description="${%ArtifactDescr}" >
       <f:textbox />
     </f:entry>
     <f:entry field="parameters" default="" title="${%Parameters}" description="${%ParametersDescr}" >
       <f:textarea />
+    </f:entry>
+    <f:entry field="autoUpgradable" default="" title="${%AutoUpgradable}" description="${%AutoUpgradableDescr}" >
+      <f:checkbox />
+    </f:entry>
+    <f:entry field="overrideWithDefaultParameters" default="" title="${%OverrideWithDefaultParameters}" description="${%OverrideWithDefaultParametersDescr}" >
+      <f:checkbox />
     </f:entry>
  </j:jelly>

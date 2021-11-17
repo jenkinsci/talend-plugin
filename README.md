@@ -36,7 +36,27 @@ Environment, then the Workspace and then the Task.
 
 ## Pipeline integration
 
-The pipeline integration is not working yet.
+Pipeline scripts are supported. 
+
+### createTask
+
+```
+params = '''Secret_Token=secret token
+            TempFolder=/var/temp/''' 
+    
+createTask  artifact: 'My_First_Job', 
+            environment: 'DEVELOPMENT', 
+            parameters: params,
+            workspace: 'SOMEPROJECT',
+            runtimeType: 'REMOTE_ENGINE',
+            runtime: 'RemoteEngine_1',
+            AutoUpgradable: true,
+            OverrideWithDefaultParameters: true
+```
+
+### runTask
+
+runTask environment: 'DEVELOPMENT', task: 'My_Second_Job', workspace: 'OURBIGPROJECT'
 
 ## Contributing
 

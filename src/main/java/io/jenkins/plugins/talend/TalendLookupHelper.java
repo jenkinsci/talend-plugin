@@ -20,6 +20,7 @@ import com.talend.tmc.services.runtime.EngineService;
 import com.talend.tmc.services.workspaces.WorkspaceService;
 
 import hudson.util.ListBoxModel;
+import hudson.util.Secret;
 import jenkins.model.GlobalConfiguration;
 
 public class TalendLookupHelper {
@@ -160,39 +161,72 @@ public class TalendLookupHelper {
 		return model;
 	}
 
-	
-	static String getFirstEngineId(String environment) {
+	public static String getRemoteEngineIdByName(String environment, String runtime) {
+		TalendCredentials credentials = getTalendCredentials();
+		TalendCloudRegion region = getTalendRegion();
+		String result = "";
+		EngineService engineService = EngineService.instance(credentials, region);
+
+		String environmentId = getEnvironmentIdByName(environment);
+
+		SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
+    	
+    	String query = fiql.is("workspace.environment.id").equalTo(environmentId).and().is("name").equalTo(runtime).query();
+    	try {
+	    	Engine[] engines = engineService.get(query);
+			if (engines.length > 0) {
+				result = engines[0].getId();
+			}
+		} catch (TalendRestException | IOException ex) {
+			LOGGER.warning(ex.getMessage());
+		}
+
+		return result;
+	}
+
+	static ListBoxModel getRemoteEngineList(String environment) {
+		if (environment == null) {
+			LOGGER.warning("environment is null");
+			return null;
+		}
+		ListBoxModel model = new ListBoxModel();
 		String engineId = "";
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
-
+		
+		String environmentId = getEnvironmentIdByName(environment);
+		
 		EngineService engineService = EngineService.instance(credentials, region);
 
 		SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
     	
-    	String query = fiql.is("workspace.environment.id").equalTo(environment).and().is("status").equalTo("PAIRED").query();
+    	String query = fiql.is("workspace.environment.id").equalTo(environmentId).and().is("status").equalTo("PAIRED").query();
     	try {
 	    	Engine[] engines = engineService.get(query);
-	    	if (engines.length > 0 ) {
-	    		Engine firstengine = engines[0];
-	        	engineId = engines[0].getId();
-	    	}
+			for (Engine engine : engines) {
+				model.add(engine.getName(), engine.getName());
+			}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
 		}
-    	return engineId;
+    	return model;
 	}
-	
+
 	static TalendCloudRegion getTalendRegion() {
 		String region = TalendConfiguration.get().getRegion();
 	    return TalendCloudRegion.valueOf(region);
 	}
 	
 	static TalendCredentials getTalendCredentials() {
+		String api = ""; 
 		String token = TalendConfiguration.get().getCredentialsid();
-	    StringCredentials stringCredentials = CredentialsHelper.lookupSystemCredentials(token);
-
-		String api = stringCredentials.getSecret().getPlainText();
+		if (token != null) {
+		    StringCredentials stringCredentials = CredentialsHelper.lookupSystemCredentials(token);
+		    if (stringCredentials != null) {
+			    Secret mySecret = stringCredentials.getSecret();
+			    api = mySecret.getPlainText();
+		    }
+		}
         TalendCredentials credentials = new TalendBearerAuth(api);
         return credentials;
 	}
