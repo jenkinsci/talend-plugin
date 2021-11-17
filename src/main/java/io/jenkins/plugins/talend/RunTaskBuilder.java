@@ -152,9 +152,10 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 			listener.getLogger().println("Talend Task Started: " + executionResponse.getExecutionId());
 
 			Thread.sleep(10); // to include the InterruptedException
+		} catch (RuntimeException e) {
+			throw e;
 		} catch (TalendRestException | IOException | InterruptedException ex) {
 			listener.getLogger().println(ex.getMessage());
-
 		} catch (Exception e) {
 			listener.getLogger().println(e.getMessage());
 		}

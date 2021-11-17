@@ -89,6 +89,7 @@ public class TalendConfiguration extends GlobalConfiguration {
     }
     
     @POST
+	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings()
 	public FormValidation doTestConnection(@AncestorInPath final Item item, 
 			@QueryParameter("credentialsid") final String credentialsid, 
 			@QueryParameter("region") final String region)
@@ -109,7 +110,9 @@ public class TalendConfiguration extends GlobalConfiguration {
 			credentials = new TalendBearerAuth(api);
 			workspaceService = WorkspaceService.instance(credentials, TalendCloudRegion.valueOf(region));
 
+			// dummy call to Talend Cloud 
 			Workspace[] spaces = workspaceService.get("");
+			
 		} catch (TalendRestException | IOException err) {
 			return FormValidation.error("Connection error : " + err.toString());
 		} finally {
