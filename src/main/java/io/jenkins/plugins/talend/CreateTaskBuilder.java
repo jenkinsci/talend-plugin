@@ -6,7 +6,6 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import io.jenkins.plugins.talend.Messages;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -15,14 +14,14 @@ import hudson.model.Result;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.RelativePath;
-
+import hudson.Util;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.verb.POST;
 
 import com.talend.tmc.dom.TaskNew;
 import com.talend.tmc.dom.Trigger;
-import com.talend.tmc.dom.enums.ArtifactType;
 import com.talend.tmc.dom.Runtime;
 import com.talend.tmc.dom.Artifact;
 import com.talend.tmc.dom.RunConfig;
@@ -144,9 +143,9 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, EnvVars env, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
 		listener.getLogger().println("*** CREATETASK ***");
-		listener.getLogger().println("artifactname=" + tArtifact);
 		listener.getLogger().println("environment=" + tEnvironment);
 		listener.getLogger().println("workspace=" + tWorkspace);
+		listener.getLogger().println("artifactname=" + tArtifact);
         String id = "";
 
 		TalendCredentials credentials = TalendLookupHelper.getTalendCredentials();
@@ -158,10 +157,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             ArtifactService artifactService = ArtifactService.instance(credentials, region);
 
     		String environmentId = TalendLookupHelper.getEnvironmentIdByName(tEnvironment);
-            listener.getLogger().println("environmentId=" + environmentId);
-
             String workspaceId = TalendLookupHelper.getWorkspaceIdByName(environmentId, tWorkspace);
-            listener.getLogger().println("workspaceId=" + workspaceId);
 
             Artifact[] artifacts = artifactService.getByName(tArtifact, workspaceId);
         	if (artifacts.length > 0) {
@@ -197,13 +193,12 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 				if (parameters.size() > 0) {
 					newTask.setParameters(parameters);
 				}
+	            LOGGER.info("Going to create task :" + newTask.toString() );
 
 				Task createdTask = executableTask.create(newTask);
 
         		id = createdTask.getId();
             	listener.getLogger().println("New Task has Id =" + id);
-            	listener.getLogger().println("Going to add RunConfig with default values to the task");
-            	listener.getLogger().println("The trigger is MANUAL and we take the first Remote engine in the workspace");
 
             	String engineId = TalendLookupHelper.getRemoteEngineIdByName(tEnvironment, tRuntime);
             	if (!engineId.isEmpty()) {
@@ -218,6 +213,8 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
                 	// This can only be set on Clusters
 //	                	runConfig.setParallelExecutionAllowed("false");
                     ExecutableRunConfig executableRunConfig = ExecutableRunConfig.instance(credentials, region);
+    	            LOGGER.info("Going to add RunConfig :" + executableRunConfig.toString() );
+
                     executableRunConfig.update("task", id, runConfig);
             	} else {
                 	listener.getLogger().println("No Engine in Workspace available, skipping updating RunConfig");            		
@@ -226,7 +223,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             	listener.getLogger().println("The TaskID is stored in Environment variable TALEND_NEW_TASK_ID ");
             	env.put("TALEND_NEW_TASK_ID", id);
         	} else if (artifacts.length == 0) {
-            	listener.getLogger().println("Artifact " + tArtifact + " Not Found");
+            	throw new Exception("Artifact " + tArtifact + " Not Found");
         	}
     		listener.getLogger().println("*** CREATETASK ***");
             Thread.sleep(10);  // to include the InterruptedException
@@ -248,12 +245,27 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings
     	private static final Logger LOGGER = Logger.getLogger(GlobalConfiguration.class.getName());
 
-		public ListBoxModel doFillEnvironmentItems(@CheckForNull @AncestorInPath Item context) {
+        @POST
+		public ListBoxModel doFillEnvironmentItems(@CheckForNull @AncestorInPath Item item) {
+            ListBoxModel model = new ListBoxModel();
+            if (item == null) { // no context
+            	return model;
+            }
+            item.checkPermission(Item.CONFIGURE);
 			return TalendLookupHelper.getEnvironmentList();
 		}
 
-		public ListBoxModel doFillWorkspaceItems(@QueryParameter String environment) {
-			return TalendLookupHelper.getWorkspaceList(environment);
+        @POST
+		public ListBoxModel doFillWorkspaceItems(@AncestorInPath Item item, @QueryParameter String environment) {
+            ListBoxModel model = new ListBoxModel();
+            if (item == null) { // no context
+            	return model;
+            }
+            item.checkPermission(Item.CONFIGURE);
+        	if (!environment.isEmpty()) {
+        		return TalendLookupHelper.getWorkspaceList(environment);
+        	}
+        	return model;
 		}
             	    	
 		public ListBoxModel doFillRuntimeTypeItems(@QueryParameter String environment) {
@@ -265,25 +277,36 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             return model;
 		}
 
-		public ListBoxModel doFillRuntimeItems(@QueryParameter String environment, @QueryParameter String runtimeType) {
+        @POST
+		public ListBoxModel doFillRuntimeItems(@AncestorInPath Item item, @QueryParameter String environment, @QueryParameter String runtimeType) {
             ListBoxModel model = new ListBoxModel();
-			
-			 switch (runtimeType) {
-	            case "CLOUD":  			model.add("Not Implemented", "NOT");
-	                     				break;
-	            case "REMOTE_ENGINE":	model = TalendLookupHelper.getRemoteEngineList(environment);
-	                     				break;
-	            case "REMOTE_ENGINE_CLUSTER":	model.add("Not Implemented", "NOT");
- 										break;
-	            case "CLOUD_EXCLUSIVE":	model.add("Not Implemented", "NOT");
-	            						break;
-	            default: model.add("Not Implemented", "NOT");
-			 }
-			 return model; 
+            if (item == null) { // no context
+            	return model;
+            }
+            item.checkPermission(Item.CONFIGURE);
+        	if (!environment.isEmpty()) {
+				switch (runtimeType) {
+				    case "CLOUD":  			model.add("Not Implemented", "NOT");
+				         				break;
+				    case "REMOTE_ENGINE":	model = TalendLookupHelper.getRemoteEngineList(environment);
+				         				break;
+				    case "REMOTE_ENGINE_CLUSTER":	model.add("Not Implemented", "NOT");
+										break;
+				    case "CLOUD_EXCLUSIVE":	model.add("Not Implemented", "NOT");
+										break;
+				    default: model.add("Not Implemented", "NOT");
+				}
+        	}
+			return model; 
 		}
 
-		public FormValidation doCheckArtifact(@QueryParameter String artifact)
+        @POST
+		public FormValidation doCheckArtifact(@AncestorInPath Item item, @QueryParameter String artifact)
                 throws IOException, ServletException {
+            if (item == null) { // no context
+                return FormValidation.error("No context");
+            }
+            item.checkPermission(Item.CONFIGURE);
             if (artifact.length() == 0)
                 return FormValidation.warning("Artifactname is missing");
 			if (!artifact.matches("[a-zA-Z0-9_]+")) {
@@ -292,8 +315,16 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckParameters(@QueryParameter String parameters)
+        @POST
+        public FormValidation doCheckParameters(@AncestorInPath Item item, @QueryParameter String parameters)
 			throws IOException, ServletException {
+            if (item == null) { // no context
+                return FormValidation.error("No context");
+            }
+            item.checkPermission(Item.CONFIGURE);
+            if (Util.fixEmptyAndTrim(parameters) == null) {
+                return FormValidation.ok();
+              }
 			if (!parameters.isEmpty() && (parameters.indexOf("=") < 0)) {
 				return FormValidation.warning("Invalid Parameters");
 			}
@@ -311,7 +342,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 			}
 			return FormValidation.ok();
         }
-        
+
         @Override
         public boolean isApplicable(@SuppressWarnings("rawtypes") Class<? extends AbstractProject> aClass) {
             return true;

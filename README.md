@@ -19,19 +19,32 @@ Talend Cloud with these credentials!
 
 Now you are ready to create your first job.
 
+Please take note that all settings are stored by name, not by ID, so if you rename items in Talend Cloud, your Jenkins configuration is
+broken. This is to keep the UI and the Pipeline versions act the same.
+
 ### Create a Task
 
-Create a Freestyle Job and add the build task "Create Talend Task". You can select the artifact that you want to base your task on 
+Create a Freestyle Job and add the build task "Talend Create Task". You can select the artifact that you want to base your task on 
 by first selecting the Environment, then the Workspace and then the Artifact.
 
 ![Create a New Task Image](docs/images/createtask.png "Create a New Task")
 
 ### Run a Task
 
-Create a Freestyle Job and add the build task "Run Task". You can select the task by first selecting the 
+Create a Freestyle Job and add the build task "Talend Run Task". You can select the task by first selecting the 
 Environment, then the Workspace and then the Task.
+The Task is a textbox so you can plan running a task that has not been created yet (and use jenkins parameters).
 
 ![Run a Task Image](docs/images/runtask.png "Run a Task")
+
+
+### Run a Promotion
+
+Create a Freestyle Job and add the build task "Talend Run Promotion". First, select a promotion, then the type of Artifact you would 
+like to promote, and so on.
+You can choose to overwrite resources and run profiles.
+
+![Run a Task Image](docs/images/runpromotion.png "Run a Task")
 
 
 ## Pipeline integration
@@ -56,7 +69,28 @@ createTask  artifact: 'My_First_Job',
 
 ### runTask
 
+```
 runTask environment: 'DEVELOPMENT', task: 'My_Second_Job', workspace: 'OURBIGPROJECT'
+```
+
+### runPromotion
+
+```
+runPromotion promotion: 'DEV to TEST', artifactType: 'ACTION', workspace: 'MyPlayground', task: 'My_Second_Job'
+```
+
+If you are promoting an environment, you dont have to include any type of artifact, 'promotion' and 'artifactType' are enough
+If you are promoting a workspace, add 'workspace'
+If you are promoting any other artifact type, add workspace and 'plan', 'task' or 'artifact' respectively.
+
+The ArtifactTypes are the interal Talend Cloud API ones + ENVIRONMENT for those daring to use it:
+
+- ENVIRONMENT for promoting Environments
+- WORKSPACE for promoting Workspaces
+- PLAN to promote Plans
+- FLOW to promote Tasks
+- ACTION to promote Artifacts
+
 
 ## Contributing
 

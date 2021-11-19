@@ -104,6 +104,7 @@ public class TalendConfiguration extends GlobalConfiguration {
 
 		TalendCredentials credentials = null;
 		WorkspaceService workspaceService = null;
+		Workspace[] spaces = null;
 		try {
 			StringCredentials stringCredentials = optStringCredentials.get();
 			String api = stringCredentials.getSecret().getPlainText();
@@ -111,7 +112,7 @@ public class TalendConfiguration extends GlobalConfiguration {
 			workspaceService = WorkspaceService.instance(credentials, TalendCloudRegion.valueOf(region));
 
 			// dummy call to Talend Cloud 
-			Workspace[] spaces = workspaceService.get("");
+			spaces = workspaceService.get("");
 			
 		} catch (TalendRestException | IOException err) {
 			return FormValidation.error("Connection error : " + err.toString());
@@ -119,6 +120,7 @@ public class TalendConfiguration extends GlobalConfiguration {
 			credentials = null;
 			workspaceService = null;
 			optStringCredentials = null;
+			spaces = null;
 		}
 		return FormValidation.ok("Connected to Talend Cloud succesfully");
 	}

@@ -6,6 +6,11 @@
         ${%ArtifactType}<br />
       <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" />
         ${%Task}<br />
-      <f:select field="task" default="" title="${%Task}" description="${%TaskDescr}" />
+      <f:select field="task" default="" title="${%Task}" description="${%TaskDescr}" checkMethod="post" />
     </f:entry>
+	<f:optionalBlock name="dynamic" title="${%ExtraOptions}">
+	    <f:entry field="parameters" default="" title="${%Parameters}" description="${%ParametersDescr}" >
+	      <f:textarea checkMethod="post" />
+	    </f:entry>
+	</f:optionalBlock>
  </j:jelly>

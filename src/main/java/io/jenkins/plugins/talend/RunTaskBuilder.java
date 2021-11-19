@@ -1,31 +1,29 @@
-package io.jenkins.plugins.talend;
+ package io.jenkins.plugins.talend;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
 
 import org.apache.cxf.jaxrs.ext.search.client.SearchConditionBuilder;
 import org.jenkinsci.Symbol;
-import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.verb.POST;
 
-import com.talend.tmc.dom.Executable;
+import com.talend.tmc.dom.Execution;
 import com.talend.tmc.dom.ExecutionRequest;
 import com.talend.tmc.dom.ExecutionResponse;
 import com.talend.tmc.dom.Task;
 import com.talend.tmc.dom.Workspace;
-import com.talend.tmc.services.TalendBearerAuth;
 import com.talend.tmc.services.TalendCloudRegion;
 import com.talend.tmc.services.TalendCredentials;
 import com.talend.tmc.services.TalendRestException;
 import com.talend.tmc.services.executables.ExecutableTask;
-import com.talend.tmc.services.executables.ExecutableTaskService;
 import com.talend.tmc.services.executions.ExecutionService;
 import com.talend.tmc.services.workspaces.WorkspaceService;
 
@@ -35,6 +33,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
 import hudson.model.Item;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
@@ -55,6 +54,8 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 	private String tWorkspace;
 	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 	private String tTask;
+	private String tParameters = "";
+
 
 	@DataBoundConstructor
 	public RunTaskBuilder() {
@@ -88,76 +89,89 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 		this.tTask = value;
 	}
 
-	@Override
+    public String getParameters () {
+        return this.tParameters;
+    }
+
+    @DataBoundSetter
+    public void setParameters(String value) {
+    	tParameters = value;
+    }
+
+    @Override
 	public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
 			throws InterruptedException, IOException {
 		listener.getLogger().println("*** RUNTASK ***");
-		listener.getLogger().println("jobname=" + tTask);
 		listener.getLogger().println("environment=" + tEnvironment);
 		listener.getLogger().println("workspace=" + tWorkspace);
-		listener.getLogger().println("*** RUNTASK ***");
+		listener.getLogger().println("jobname=" + tTask);
+		listener.getLogger().println("parameters=" + tParameters);
 		String id = "";
-		Task task = null;
 
 		TalendCredentials credentials = TalendLookupHelper.getTalendCredentials();
 		TalendCloudRegion region = TalendLookupHelper.getTalendRegion();
 
-		listener.getLogger().println("jobname=" + tTask);
-		listener.getLogger().println("environment=" + tEnvironment);
-		listener.getLogger().println("workspace=" + tWorkspace);
-
 		try {
-			ExecutionService executionService = ExecutionService.instance(credentials, region);
 
-			ExecutableTask executableTask = ExecutableTask.instance(credentials, region);
 			if (!tTask.isEmpty()) {
-			   
-				WorkspaceService workspaceService = WorkspaceService.instance(credentials, region);
-				SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
-				String query = fiql.is("name").equalTo(tWorkspace).and().is("environment.name").equalTo(tEnvironment)
-						.query();
-				Workspace[] workspaces = workspaceService.get(query);
-				if (workspaces.length > 1)
-					listener.getLogger()
-							.println("More than 1 workspace returned with that name! We'll take the first one.");
-				String workspaceId = workspaces[0].getId();
-				listener.getLogger().println("workspaceId=" + workspaceId);
-				Task[] tasks = null;
-				tasks = executableTask.getByName(tTask, workspaceId);
-				task = tasks[0];
-				listener.getLogger().println("task=" + task.getName());
-				id = task.getExecutable();
+				id = TalendLookupHelper.getTaskIdByName(tEnvironment, tWorkspace, tTask);
 
 			} else {
-				listener.getLogger().println("No Task provided!");
+				throw new Exception("No Task provided!");
 			}
 
-			listener.getLogger().println("Found Task: " + id);
+			listener.getLogger().println("Found Task with id: " + id);
 
 			ExecutionRequest executionRequest = new ExecutionRequest();
 			executionRequest.setExecutable(id);
+			
+			String[] values = tParameters.split("\n");
+			Map<String, String> parameters = new HashMap<>();
+			for (int i = 0; i < values.length; i++) {
+				if (!(values[i].indexOf("=") < 0) ) {
+					String key =values[i].split("=")[0].trim();
+					String value =values[i].split("=")[1].trim();
+					if (key.length() > 0 && value.length() > 0) {
+						parameters.put(key, value);
+					}
+				}
+			}
+			if (parameters.size() > 0) {
+				executionRequest.setParameters(parameters);
+			}
 
 			/*
 			 * TODO: Read all the logs until finished
 			 * 
-			 * Hashtable<String, String> parameters = null; if (Cli.hasCliValue("cv")) {
-			 * String[] pairs = Cli.getCliValue("cv").split(";"); parameters = new
-			 * Hashtable<>(); for (String pair : pairs) { String[] nv = pair.split("=");
-			 * parameters.put(nv[0], nv[1]); }
-			 * 
-			 * executionRequest.setParameters(parameters); }
-			 * 
 			 */
+			ExecutionService executionService = ExecutionService.instance(credentials, region);
 			ExecutionResponse executionResponse = executionService.post(executionRequest);
 			listener.getLogger().println("Talend Task Started: " + executionResponse.getExecutionId());
+            while (true) {
+
+                Execution execution = executionService.get(executionResponse.getExecutionId());
+                if (execution.getFinishTimestamp() != null) {
+                    if (!execution.getExecutionStatus().equals("EXECUTION_SUCCESS")) {
+                        throw new Exception("Job Completed in non Successful State :" + execution.toString());
+                    } else {
+                    	LOGGER.info("Job Finished Succesfully");
+                    }
+                    break;
+                } else {
+                    Thread.sleep(5000);
+                }
+            }
+    		listener.getLogger().println("*** RUNTASK ***");
 
 			Thread.sleep(10); // to include the InterruptedException
 		} catch (RuntimeException e) {
 			throw e;
 		} catch (TalendRestException | IOException | InterruptedException ex) {
 			listener.getLogger().println(ex.getMessage());
+        	run.setResult(Result.FAILURE);
 		} catch (Exception e) {
 			listener.getLogger().println(e.getMessage());
+        	run.setResult(Result.FAILURE);
 		}
 
 	}
@@ -166,27 +180,80 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 	@Symbol("runTask")
 	public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-		public ListBoxModel doFillEnvironmentItems(@CheckForNull @AncestorInPath Item context) {
+        @POST
+		public ListBoxModel doFillEnvironmentItems(@CheckForNull @AncestorInPath Item item) {
+            ListBoxModel model = new ListBoxModel();
+            if (item == null) { // no context
+            	return model;
+            }
 			return TalendLookupHelper.getEnvironmentList();
 		}
 
-		public ListBoxModel doFillWorkspaceItems(@QueryParameter String environment) {
-			return TalendLookupHelper.getWorkspaceList(environment);
+        @POST
+		public ListBoxModel doFillWorkspaceItems(@AncestorInPath Item item,@QueryParameter String environment) {
+            ListBoxModel model = new ListBoxModel();
+            if (item == null) { // no context
+            	return model;
+            }
+            item.checkPermission(Item.CONFIGURE);
+        	if (!environment.isEmpty()) {
+        		return TalendLookupHelper.getWorkspaceList(environment);
+        	}
+        	return model;
 		}
 
-		public ListBoxModel doFillTaskItems(@QueryParameter String environment, @QueryParameter String workspace) {
-			return TalendLookupHelper.getTaskList(environment, workspace);
+        @POST
+		public ListBoxModel doFillTaskItems(@AncestorInPath Item item, @QueryParameter String environment, @QueryParameter String workspace) {
+            ListBoxModel model = new ListBoxModel();
+            if (item == null) { // no context
+            	return model;
+            }
+            item.checkPermission(Item.CONFIGURE);
+        	if (!environment.isEmpty() && !workspace.isEmpty()) {
+        		return TalendLookupHelper.getTaskList(environment, workspace);
+        	}
+        	return model;
 		}
 
-		public FormValidation doCheckName(@QueryParameter String environment, @QueryParameter String workspace,
-				@QueryParameter String task) throws IOException, ServletException {
-			if (task.length() == 0)
-				return FormValidation.warning("No Job");
-			if (environment.length() < 4)
-				return FormValidation.warning("No Env");
-			if (workspace.length() < 4) {
-				return FormValidation.warning("No Workspace");
+        @POST
+        public FormValidation doCheckParameters(@AncestorInPath Item item, @QueryParameter String parameters)
+			throws IOException, ServletException {
+            if (item == null) { // no context
+                return FormValidation.error("No context");
+            }
+            item.checkPermission(Item.CONFIGURE);
+			if (!parameters.isEmpty() && (parameters.indexOf("=") < 0)) {
+				return FormValidation.warning("Invalid Parameters");
 			}
+			if (!parameters.isEmpty() && (parameters.indexOf("=") == 0)) {
+				return FormValidation.warning("Invalid Parameters");
+			}
+			String[] values = parameters.split("\n");
+			for (int i = 0; i < values.length; i++) {
+				if (!(values[i].indexOf("=") < 0)) {
+					String key =values[i].split("=")[0].trim();
+					if (!key.matches("[a-zA-Z0-9_]+")) {
+						return FormValidation.warning("Keys may only contain characters, numbers and underscores: '" + key + "'");
+					}
+				}
+			}
+			return FormValidation.ok();
+        }
+        
+        @POST
+        public FormValidation doCheckTask(@AncestorInPath Item item, @QueryParameter String environment, @QueryParameter String workspace,
+				@QueryParameter String task) throws IOException, ServletException {
+            if (item == null) { // no context
+                return FormValidation.error("No context");
+            }
+            item.checkPermission(Item.CONFIGURE);
+			if (environment.isEmpty() )
+				return FormValidation.warning("Please select an Environment");
+			if (workspace.isEmpty() ) 
+				return FormValidation.warning("Please select a Workspace");
+			if (task.isEmpty())
+				return FormValidation.warning("Please select a Task");
+			
 			return FormValidation.ok();
 		}
 

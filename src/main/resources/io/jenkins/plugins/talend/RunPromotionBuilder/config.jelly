@@ -1,0 +1,75 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" >
+	<script type="text/javascript">
+	    function changeArtifactType(value) {
+			if (value != "ENVIRONMENT") {
+				document.getElementById("workspace").style.display = "block"
+			} else {
+				document.getElementById("workspace").style.display = "none"
+			}		
+			if (value == "PLAN") {
+				document.getElementById("plan").style.display = "block"
+			} else {
+				document.getElementById("plan").style.display = "none"
+			}		
+			if (value == "FLOW") {
+				document.getElementById("task").style.display = "block"
+			} else {
+				document.getElementById("task").style.display = "none"
+			}		
+			if (value == "ACTION") {
+				document.getElementById("artifact").style.display = "block"
+			} else {
+				document.getElementById("artifact").style.display = "none"
+			}
+		}    
+	</script>
+  
+    <f:entry>
+        ${%Promotion}<br />
+       <f:select field="promotion" default="" title="${%Promotion}" description="${%PromotionDescr}" /><br />
+        ${%PromotionDescr}<br />
+       <p id="artifacttype">
+	        ${%ArtifactType}<br />
+	       <f:select field="artifactType" default="" title="${%ArtifactType}" description="${%ArtifactTypeDescr}" onload="changeArtifactType()" onchange="changeArtifactType(value)" checkMethod="post" /><br />
+	        ${%ArtifactTypeDescr}<br />
+      </p>
+       <p id="workspace">
+	        ${%Workspace}<br />
+    	   <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" /><br />
+	        ${%WorkspaceDescr}<br />
+    	</p>
+       <p id="task">
+	        ${%Task}<br />
+    	   <f:select field="task" default="" /><br />
+        	${%TaskDescr}<br />
+		</p>
+       <p id="plan">
+	        ${%Plan}<br />
+    	   <f:select field="plan" default="" /><br />
+        	${%PlanDescr}<br />
+		</p>
+		<p id="artifact">
+	        ${%Artifact}<br />
+       		<f:select field="artifact" default="" title="${%Artifact}" description="${%ArtifactDescr}" /><br />
+	        ${%ArtifactDescr}<br />
+		</p>
+    </f:entry>
+
+	<script>
+		/* Initialize dropdowns */
+		changeArtifactType(document.getElementById('artifacttype').querySelector('select').value)
+	</script> 	
+
+
+    <f:section title="${%Optional}">
+		<f:advanced>
+	    	<f:entry field="keepTargetResources" default="" title="${%KeepTargetResources}" >
+	    	  	<f:checkbox />
+	    	</f:entry>
+	    	<f:entry field="keepTargetRunProfiles" default="" title="${%KeepTargetRunProfiles}" >
+	      		<f:checkbox />
+	    	</f:entry>
+		</f:advanced>
+	</f:section>  
+ </j:jelly>
