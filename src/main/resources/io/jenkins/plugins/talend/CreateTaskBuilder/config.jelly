@@ -1,8 +1,10 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" >
-    <f:entry>
+	<script src="${rootURL}/plugin/talend/createTask.js"/>
+	<j:set var="creatorId" value="${descriptor.createCreatorId()}" />
+	<f:entry>
 	    ${%Environment} <br />
-       <f:select field="environment" default="" title="${%Environment}" description="${%EnvironmentDescr}" /><br />
+       <f:select field="environment" default="default" title="${%Environment}" description="${%EnvironmentDescr}" /><br />
         ${%Workspace}<br />
       <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" />
         ${%RuntimeType}<br />
@@ -16,10 +18,28 @@
     <f:entry field="parameters" default="" title="${%Parameters}" description="${%ParametersDescr}" >
       <f:textarea checkMethod="post" />
     </f:entry>
-    <f:entry field="autoUpgradable" default="" title="${%AutoUpgradable}" description="${%AutoUpgradableDescr}" >
-      <f:checkbox />
-    </f:entry>
-    <f:entry field="overrideWithDefaultParameters" default="" title="${%OverrideWithDefaultParameters}" description="${%OverrideWithDefaultParametersDescr}" >
-      <f:checkbox />
-    </f:entry>
+	<f:entry >
+    	<p id="field-upgradableP-${creatorId}" >
+			<f:checkbox field="autoUpgradable" default="true" onclick="changeAutoUpgradable(${creatorId}, checked)" />
+	    	${%AutoUpgradable}
+	    	<br />
+	    	${%AutoUpgradableDescr}
+		</p>
+	   <p id="field-overRide-${creatorId}">
+	      <f:checkbox field="overrideWithDefaultParameters" />
+	      ${%OverrideWithDefaultParameters}
+	      <br/>
+	      ${%OverrideWithDefaultParametersDescr}
+		</p>
+	</f:entry>
+
+	<script>
+		/* Initialize checkbox 
+		wait a little bit for the DOM to load
+		*/
+		setTimeout(function(){
+			changeAutoUpgradable(${creatorId}, document.getElementById("field-upgradableP-" + ${creatorId}).querySelector('input').checked)
+		}, 50)
+	</script> 	
+	
  </j:jelly>

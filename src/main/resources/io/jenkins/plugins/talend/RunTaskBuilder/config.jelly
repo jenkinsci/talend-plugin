@@ -2,8 +2,8 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" >
     <f:entry>
 	    ${%Environment} <br />
-       <f:select field="environment" default="" title="${%Environment}" description="${%EnvironmentDescr}" /><br />
-        ${%ArtifactType}<br />
+       <f:select field="environment" default="default" title="${%Environment}" description="${%EnvironmentDescr}" /><br />
+        ${%Workspace}<br />
       <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" />
         ${%Task}<br />
       <f:select field="task" default="" title="${%Task}" description="${%TaskDescr}" checkMethod="post" />

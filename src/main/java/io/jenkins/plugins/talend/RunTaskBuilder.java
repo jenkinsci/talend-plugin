@@ -123,7 +123,9 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 			listener.getLogger().println("Found Task with id: " + id);
 
 			ExecutionRequest executionRequest = new ExecutionRequest();
+    		listener.getLogger().println("*** 4  RUNTASK ***");
 			executionRequest.setExecutable(id);
+    		listener.getLogger().println("*** 3  RUNTASK ***");
 			
 			String[] values = tParameters.split("\n");
 			Map<String, String> parameters = new HashMap<>();
@@ -144,7 +146,9 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 			 * TODO: Read all the logs until finished
 			 * 
 			 */
+    		listener.getLogger().println("*** 2  RUNTASK ***");
 			ExecutionService executionService = ExecutionService.instance(credentials, region);
+    		listener.getLogger().println("*** 1  RUNTASK ***");
 			ExecutionResponse executionResponse = executionService.post(executionRequest);
 			listener.getLogger().println("Talend Task Started: " + executionResponse.getExecutionId());
             while (true) {
@@ -152,7 +156,7 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
                 Execution execution = executionService.get(executionResponse.getExecutionId());
                 if (execution.getFinishTimestamp() != null) {
                     if (!execution.getExecutionStatus().equals("EXECUTION_SUCCESS")) {
-                        throw new Exception("Job Completed in non Successful State :" + execution.toString());
+                        throw new InterruptedException("Job Completed in non Successful State :" + execution.toString());
                     } else {
                     	LOGGER.info("Job Finished Succesfully");
                     }
@@ -164,15 +168,38 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
     		listener.getLogger().println("*** RUNTASK ***");
 
 			Thread.sleep(10); // to include the InterruptedException
-		} catch (RuntimeException e) {
-			throw e;
-		} catch (TalendRestException | IOException | InterruptedException ex) {
-			listener.getLogger().println(ex.getMessage());
-        	run.setResult(Result.FAILURE);
-		} catch (Exception e) {
-			listener.getLogger().println(e.getMessage());
-        	run.setResult(Result.FAILURE);
 		}
+		 catch(IOException ex){
+		    	String message = ex.getMessage();
+		    	listener.getLogger().println("**** ERROR2 ****");
+		    	listener.getLogger().println(message);
+		    	run.setResult(Result.FAILURE);
+		    	listener.getLogger().println("**** ERROR2 ****");
+		    	throw new InterruptedException (message);
+		    
+		        }
+		catch(TalendRestException ex){
+        	String message = ex.getMessage();
+        	listener.getLogger().println("**** ERROR1 ****");
+        	listener.getLogger().println(message);
+        	run.setResult(Result.FAILURE);
+        	listener.getLogger().println("**** ERROR1 ****");
+        	throw new InterruptedException (message);
+        
+    } catch(NullPointerException ex){
+        	String message = ex.getMessage();
+        	listener.getLogger().println("**** ERROR3 ****");
+        	listener.getLogger().println(message);
+        	run.setResult(Result.FAILURE);
+        	listener.getLogger().println("**** ERROR3 ****");
+        	throw new InterruptedException (message);
+        }
+	 catch (RuntimeException e) {
+		throw e;
+    }          catch(Exception e) {
+        	listener.getLogger().println(e.getMessage());
+        	run.setResult(Result.FAILURE);
+          }
 
 	}
 
@@ -240,23 +267,6 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 			return FormValidation.ok();
         }
         
-        @POST
-        public FormValidation doCheckTask(@AncestorInPath Item item, @QueryParameter String environment, @QueryParameter String workspace,
-				@QueryParameter String task) throws IOException, ServletException {
-            if (item == null) { // no context
-                return FormValidation.error("No context");
-            }
-            item.checkPermission(Item.CONFIGURE);
-			if (environment.isEmpty() )
-				return FormValidation.warning("Please select an Environment");
-			if (workspace.isEmpty() ) 
-				return FormValidation.warning("Please select a Workspace");
-			if (task.isEmpty())
-				return FormValidation.warning("Please select a Task");
-			
-			return FormValidation.ok();
-		}
-
 		@Override
 		public boolean isApplicable(@SuppressWarnings("rawtypes") Class<? extends AbstractProject> aClass) {
 			return true;

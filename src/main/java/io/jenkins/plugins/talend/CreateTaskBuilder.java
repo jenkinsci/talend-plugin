@@ -18,6 +18,7 @@ import hudson.Util;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.bind.JavaScriptMethod;
 import org.kohsuke.stapler.verb.POST;
 
 import com.talend.tmc.dom.TaskNew;
@@ -60,7 +61,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     private String tRuntimeType;
     private String tRuntime;
 	private String tParameters = "";
-	private String tAutoUpgradable = "false";
+	private String tAutoUpgradable = "true";
 	private String tOverrideWithDefaultParameters = "false";
 
     @DataBoundConstructor
@@ -229,9 +230,10 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             Thread.sleep(10);  // to include the InterruptedException
         } catch(RuntimeException ex){
         	throw ex;
-        } catch(TalendRestException | IOException | InterruptedException ex){
+        } catch(TalendRestException ex){
         	listener.getLogger().println(ex.getMessage());
         	run.setResult(Result.FAILURE);
+        	throw new InterruptedException (ex.getMessage());
         }
           catch(Exception e) {
         	listener.getLogger().println(e.getMessage());
@@ -242,6 +244,8 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     @Symbol("createTask")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    	private int jsLastTaskCreator = 0;
+    	
     	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings
     	private static final Logger LOGGER = Logger.getLogger(GlobalConfiguration.class.getName());
 
@@ -286,15 +290,15 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             item.checkPermission(Item.CONFIGURE);
         	if (!environment.isEmpty()) {
 				switch (runtimeType) {
-				    case "CLOUD":  			model.add("Not Implemented", "NOT");
+				    case "CLOUD":  			model.add("Runtime Type Not Implemented", "NOT");
 				         				break;
 				    case "REMOTE_ENGINE":	model = TalendLookupHelper.getRemoteEngineList(environment);
 				         				break;
-				    case "REMOTE_ENGINE_CLUSTER":	model.add("Not Implemented", "NOT");
+				    case "REMOTE_ENGINE_CLUSTER":	model.add("Runtime Type Not Implemented", "NOT");
 										break;
-				    case "CLOUD_EXCLUSIVE":	model.add("Not Implemented", "NOT");
+				    case "CLOUD_EXCLUSIVE":	model.add("Runtime Type Not Implemented", "NOT");
 										break;
-				    default: model.add("Not Implemented", "NOT");
+				    default: model.add("Runtime Type Not Implemented", "NOT");
 				}
         	}
 			return model; 
@@ -307,10 +311,10 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
                 return FormValidation.error("No context");
             }
             item.checkPermission(Item.CONFIGURE);
-            if (artifact.length() == 0)
-                return FormValidation.warning("Artifactname is missing");
+            if (artifact.trim().isEmpty())
+                return FormValidation.error("Artifact name is missing");
 			if (!artifact.matches("[a-zA-Z0-9_]+")) {
-				return FormValidation.warning("Artifact name may only contain characters, numbers and underscores.");
+				return FormValidation.error("Artifact name may only contain characters, numbers and underscores.");
 			}
             return FormValidation.ok();
         }
@@ -343,6 +347,11 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 			return FormValidation.ok();
         }
 
+        @JavaScriptMethod
+        public synchronized String createCreatorId() {
+            return String.valueOf(jsLastTaskCreator++);
+        }
+        
         @Override
         public boolean isApplicable(@SuppressWarnings("rawtypes") Class<? extends AbstractProject> aClass) {
             return true;

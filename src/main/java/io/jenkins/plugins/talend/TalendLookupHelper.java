@@ -38,8 +38,8 @@ public class TalendLookupHelper {
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
 		
-		WorkspaceService workspaceService = WorkspaceService.instance(credentials, region);
 		try {
+			WorkspaceService workspaceService = WorkspaceService.instance(credentials, region);
 			Workspace[] workSpaces = workspaceService.get();
 			java.util.List<String> idList = new ArrayList<String>();
 			for (Workspace space : workSpaces) {
@@ -53,19 +53,23 @@ public class TalendLookupHelper {
 			}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
-			return null;
 		}
 
 		return model;
 	}
 	
 	public static String getEnvironmentIdByName(String environment) {
+		if (environment == null) {
+			LOGGER.warning("environment is null");
+			return "";
+		}
+
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
 
 		String result = "";
-		WorkspaceService workspaceService = WorkspaceService.instance(credentials, region);
 		try {
+			WorkspaceService workspaceService = WorkspaceService.instance(credentials, region);
 			SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
 			String query = fiql.is("environment.name").equalTo(environment).query();
 			Workspace[] workSpaces = workspaceService.get(query);
@@ -85,15 +89,14 @@ public class TalendLookupHelper {
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
 		
-		ExecutablePromotionService promotionService = ExecutablePromotionService.instance(credentials, region);
 		try {
+			ExecutablePromotionService promotionService = ExecutablePromotionService.instance(credentials, region);
 			Promotion[] promotions = promotionService.getByQuery(null);
 			for (Promotion promotion: promotions) {
 				model.add(promotion.getName(), promotion.getName());
 			}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
-			return null;
 		}
 
 		return model;
@@ -104,8 +107,8 @@ public class TalendLookupHelper {
 		TalendCloudRegion region = getTalendRegion();
 
 		String result = "";
-		ExecutablePromotionService promotionService = ExecutablePromotionService.instance(credentials, region);
 		try {
+			ExecutablePromotionService promotionService = ExecutablePromotionService.instance(credentials, region);
 			SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
 			String query = fiql.is("name").equalTo(promotion).query();
 			Promotion[] promotions = promotionService.getByQuery(query);
@@ -124,8 +127,8 @@ public class TalendLookupHelper {
 		TalendCloudRegion region = getTalendRegion();
 
 		String result = "";
-		WorkspaceService workspaceService = WorkspaceService.instance(credentials, region);
 		try {
+			WorkspaceService workspaceService = WorkspaceService.instance(credentials, region);
 			SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
 			String query = fiql.is("environment.id").equalTo(environment).and().is("name").equalTo(workspace).query();
 			Workspace[] workSpaces = workspaceService.get(query);
@@ -140,14 +143,14 @@ public class TalendLookupHelper {
 	}
 	
 	public static ListBoxModel getWorkspaceList(String environment) {
+        ListBoxModel model = new ListBoxModel();
 		if (environment == null) {
 			LOGGER.warning("environment is null");
-			return null;
+			return model;
 		}
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
 		
-        ListBoxModel model = new ListBoxModel();
 
 		WorkspaceService workspaceService = WorkspaceService.instance(credentials, region);
 
@@ -171,28 +174,27 @@ public class TalendLookupHelper {
 
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
-			return null;
 		}
 
 		return model;
 	}
 	
 	public static ListBoxModel getTaskList(String environment, String workspace) {
+		ListBoxModel model = new ListBoxModel();
 		if (environment == null) {
 			LOGGER.warning("environment is null");
-			return null;
+			return model;
 		}
-		ListBoxModel model = new ListBoxModel();
 
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
 
-        ExecutableTaskService executableTaskService = ExecutableTaskService.instance(credentials, region);
-
-		String environmentId = getEnvironmentIdByName(environment);
-		String workspaceId = getWorkspaceIdByName(environmentId, workspace);
-
         try {
+        	ExecutableTaskService executableTaskService = ExecutableTaskService.instance(credentials, region);
+
+        	String environmentId = getEnvironmentIdByName(environment);
+        	String workspaceId = getWorkspaceIdByName(environmentId, workspace);
+
 			Executable[] Executables = executableTaskService
 					.getByQuery("environmentId=" + environmentId + "&workspaceId=" + workspaceId);
 			for (Executable exec : Executables) {
@@ -200,7 +202,6 @@ public class TalendLookupHelper {
 			}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
-			return null;
 		}
 
 		return model;
@@ -209,7 +210,7 @@ public class TalendLookupHelper {
 	public static String getTaskIdByName(String environment, String workspace, String task) {
 		if (environment == null) {
 			LOGGER.warning("environment is null");
-			return null;
+			return "";
 		}
 		String result = "";
 		
@@ -218,10 +219,10 @@ public class TalendLookupHelper {
 
         ExecutableTaskService executableTaskService = ExecutableTaskService.instance(credentials, region);
 
-		String environmentId = getEnvironmentIdByName(environment);
-		String workspaceId = getWorkspaceIdByName(environmentId, workspace);
-
         try {
+        	String environmentId = getEnvironmentIdByName(environment);
+        	String workspaceId = getWorkspaceIdByName(environmentId, workspace);
+
 			Executable[] executables = executableTaskService
 					.getByQuery("environmentId=" + environmentId + "&workspaceId=" + workspaceId + "&name=" + task);
 			if (executables.length > 0) {
@@ -229,28 +230,27 @@ public class TalendLookupHelper {
 			}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
-			return null;
 		}
 
 		return result;
 	}
 
 	public static ListBoxModel getPlanList(String environment, String workspace) {
+		ListBoxModel model = new ListBoxModel();
 		if (environment == null) {
 			LOGGER.warning("environment is null");
-			return null;
+			return model;
 		}
-		ListBoxModel model = new ListBoxModel();
 
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
 
-        ExecutablePlanService executablePlanService = ExecutablePlanService.instance(credentials, region);
-
-		String environmentId = getEnvironmentIdByName(environment);
-		String workspaceId = getWorkspaceIdByName(environmentId, workspace);
-
         try {
+        	ExecutablePlanService executablePlanService = ExecutablePlanService.instance(credentials, region);
+
+        	String environmentId = getEnvironmentIdByName(environment);
+        	String workspaceId = getWorkspaceIdByName(environmentId, workspace);
+
 			Executable[] Executables = executablePlanService
 					.getByQuery("environmentId=" + environmentId + "&workspaceId=" + workspaceId);
 			for (Executable exec : Executables) {
@@ -267,19 +267,19 @@ public class TalendLookupHelper {
 	public static String getPlanIdByName(String environment, String workspace, String plan) {
 		if (environment == null) {
 			LOGGER.warning("environment is null");
-			return null;
+			return "";
 		}
 		String result = "";
 		
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
 
-        ExecutablePlanService executablePlanService = ExecutablePlanService.instance(credentials, region);
-
-		String environmentId = getEnvironmentIdByName(environment);
-		String workspaceId = getWorkspaceIdByName(environmentId, workspace);
-
         try {
+        	ExecutablePlanService executablePlanService = ExecutablePlanService.instance(credentials, region);
+
+        	String environmentId = getEnvironmentIdByName(environment);
+        	String workspaceId = getWorkspaceIdByName(environmentId, workspace);
+
 			Executable[] executables = executablePlanService
 					.getByQuery("environmentId=" + environmentId + "&workspaceId=" + workspaceId + "&name=" + plan);
 			if (executables.length > 0) {
@@ -287,28 +287,27 @@ public class TalendLookupHelper {
 			}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
-			return null;
 		}
 
 		return result;
 	}
 
 	public static ListBoxModel getArtifactList(String environment, String workspace) {
+		ListBoxModel model = new ListBoxModel();
 		if (environment == null) {
 			LOGGER.warning("environment is null");
-			return null;
+			return model;
 		}
-		ListBoxModel model = new ListBoxModel();
 
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
 
-        ArtifactService artifactService = ArtifactService.instance(credentials, region);
-
-		String environmentId = getEnvironmentIdByName(environment);
-		String workspaceId = getWorkspaceIdByName(environmentId, workspace);
-
         try {
+        	ArtifactService artifactService = ArtifactService.instance(credentials, region);
+
+        	String environmentId = getEnvironmentIdByName(environment);
+        	String workspaceId = getWorkspaceIdByName(environmentId, workspace);
+
 			Artifact[] artifacts = artifactService
 					.getByQuery("environmentId=" + environmentId + "&workspaceId=" + workspaceId);
 			for (Artifact artifact : artifacts) {
@@ -316,7 +315,6 @@ public class TalendLookupHelper {
 			}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
-			return null;
 		}
 
 		return model;
@@ -325,19 +323,19 @@ public class TalendLookupHelper {
 	public static String getArtifactIdByName(String environment, String workspace, String artifact) {
 		if (environment == null) {
 			LOGGER.warning("environment is null");
-			return null;
+			return "";
 		}
 		String result = "";
 
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
 
-        ArtifactService artifactService = ArtifactService.instance(credentials, region);
-
-		String environmentId = getEnvironmentIdByName(environment);
-		String workspaceId = getWorkspaceIdByName(environmentId, workspace);
-
         try {
+        	ArtifactService artifactService = ArtifactService.instance(credentials, region);
+
+        	String environmentId = getEnvironmentIdByName(environment);
+        	String workspaceId = getWorkspaceIdByName(environmentId, workspace);
+
 			Artifact[] artifacts = artifactService
 					.getByQuery("environmentId=" + environmentId + "&workspaceId=" + workspaceId + "&name=" + artifact);
 			if (artifacts.length > 0) {
@@ -345,23 +343,28 @@ public class TalendLookupHelper {
 			}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
-			return null;
 		}
 
 		return result;
 	}
 	public static String getRemoteEngineIdByName(String environment, String runtime) {
+		if (environment == null) {
+			LOGGER.warning("environment is null");
+			return "";
+		}
+		String result = "";
+
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
-		String result = "";
-		EngineService engineService = EngineService.instance(credentials, region);
 
-		String environmentId = getEnvironmentIdByName(environment);
-
-		SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
-    	
-    	String query = fiql.is("workspace.environment.id").equalTo(environmentId).and().is("name").equalTo(runtime).query();
     	try {
+    		EngineService engineService = EngineService.instance(credentials, region);
+
+    		String environmentId = getEnvironmentIdByName(environment);
+
+    		SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
+    	
+    		String query = fiql.is("workspace.environment.id").equalTo(environmentId).and().is("name").equalTo(runtime).query();
 	    	Engine[] engines = engineService.get(query);
 			if (engines.length > 0) {
 				result = engines[0].getId();
@@ -374,22 +377,22 @@ public class TalendLookupHelper {
 	}
 
 	static ListBoxModel getRemoteEngineList(String environment) {
+		ListBoxModel model = new ListBoxModel();
 		if (environment == null) {
 			LOGGER.warning("environment is null");
-			return null;
+			return model;
 		}
-		ListBoxModel model = new ListBoxModel();
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
 		
 		String environmentId = getEnvironmentIdByName(environment);
 		
-		EngineService engineService = EngineService.instance(credentials, region);
-
-		SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
-    	
-    	String query = fiql.is("workspace.environment.id").equalTo(environmentId).and().is("status").equalTo("PAIRED").query();
     	try {
+    		EngineService engineService = EngineService.instance(credentials, region);
+
+    		SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
+    	
+    		String query = fiql.is("workspace.environment.id").equalTo(environmentId).and().is("status").equalTo("PAIRED").query();
 	    	Engine[] engines = engineService.get(query);
 			for (Engine engine : engines) {
 				model.add(engine.getName(), engine.getName());
@@ -406,6 +409,7 @@ public class TalendLookupHelper {
 	}
 	
 	static TalendCredentials getTalendCredentials() {
+		// TODO: die gracefully when there are no credentials yet 
 		String api = ""; 
 		String token = TalendConfiguration.get().getCredentialsid();
 		if (token != null) {
@@ -414,6 +418,8 @@ public class TalendLookupHelper {
 			    Secret mySecret = stringCredentials.getSecret();
 			    api = mySecret.getPlainText();
 		    }
+		} else {
+			LOGGER.warning("No Credential defined. Please create a Talend Connection.");
 		}
         TalendCredentials credentials = new TalendBearerAuth(api);
         return credentials;

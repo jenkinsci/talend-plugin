@@ -14,6 +14,7 @@ import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.bind.JavaScriptMethod;
 import org.kohsuke.stapler.verb.POST;
 
 import com.talend.tmc.dom.Advanced;
@@ -24,6 +25,7 @@ import com.talend.tmc.dom.ExecutionResponse;
 import com.talend.tmc.dom.enums.ArtifactType;
 import com.talend.tmc.services.TalendCloudRegion;
 import com.talend.tmc.services.TalendCredentials;
+import com.talend.tmc.services.TalendRestException;
 import com.talend.tmc.services.executions.ExecutionPromotionService;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -198,30 +200,31 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
 
                 ExecutionPromotionResponse execution = executionPromotionService.get(executionResponse.getExecutionId());
                 if (!execution.getStatus().equals("PROMOTED")) {
-                    throw new Exception("Job Completed in non Successful State :" + execution.toString());
+                    throw new InterruptedException("Job Completed in non Successful State :" + execution.toString());
                 } else {
                 	//TODO: Parse full Promotion Report
                 	LOGGER.info("Job Finished Succesfully");
                 }
         	} else {
-        		throw new Exception("There is nothing to promote");
+        		throw new InterruptedException("There is nothing to promote");
         	}
     		listener.getLogger().println("*** RUNPROMOTION ***");            
             Thread.sleep(10);  // to include the InterruptedException
-        } 
-        catch (RuntimeException e) {
-        	throw e;
+        } catch(TalendRestException ex){
+        	listener.getLogger().println(ex.getMessage());
+        	run.setResult(Result.FAILURE);
+        	throw new InterruptedException (ex.getMessage());
         }
-        catch(Exception e) {
+          catch(Exception e) {
         	listener.getLogger().println(e.getMessage());
         	run.setResult(Result.FAILURE);
-        }
+          }
     }
 
     @Symbol("runPromotion")
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
-    	
+    	private int jsLastPromotion;
     	@POST
         public ListBoxModel doFillPromotionItems(@CheckForNull @AncestorInPath Item item, @QueryParameter String artifactType) {
             ListBoxModel model = new ListBoxModel();
@@ -248,7 +251,7 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
         }
 
     	@POST
-        public ListBoxModel doFillWorkspaceItems(@AncestorInPath Item item, @QueryParameter String promotion) {
+        public ListBoxModel doFillWorkspaceItems(@AncestorInPath Item item, @QueryParameter String promotion, @QueryParameter String artifactType) {
             ListBoxModel model = new ListBoxModel();
             if (item == null) { // no context
             	return model;
@@ -315,6 +318,11 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
             return FormValidation.ok();
         }
      
+        @JavaScriptMethod
+        public synchronized String createPromotionId() {
+            return String.valueOf(jsLastPromotion++);
+        }
+
         @Override
         public boolean isApplicable(@SuppressWarnings("rawtypes") Class<? extends AbstractProject> aClass) {
             return true;

@@ -1,55 +1,32 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" >
-	<script type="text/javascript">
-	    function changeArtifactType(value) {
-			if (value != "ENVIRONMENT") {
-				document.getElementById("workspace").style.display = "block"
-			} else {
-				document.getElementById("workspace").style.display = "none"
-			}		
-			if (value == "PLAN") {
-				document.getElementById("plan").style.display = "block"
-			} else {
-				document.getElementById("plan").style.display = "none"
-			}		
-			if (value == "FLOW") {
-				document.getElementById("task").style.display = "block"
-			} else {
-				document.getElementById("task").style.display = "none"
-			}		
-			if (value == "ACTION") {
-				document.getElementById("artifact").style.display = "block"
-			} else {
-				document.getElementById("artifact").style.display = "none"
-			}
-		}    
-	</script>
-  
+	<script src="${rootURL}/plugin/talend/runPromotion.js"/>
+	<j:set var="promotionId" value="${descriptor.createPromotionId()}" />
     <f:entry>
         ${%Promotion}<br />
        <f:select field="promotion" default="" title="${%Promotion}" description="${%PromotionDescr}" /><br />
         ${%PromotionDescr}<br />
-       <p id="artifacttype">
+       <p id="artifacttype-${promotionId}">
 	        ${%ArtifactType}<br />
-	       <f:select field="artifactType" default="" title="${%ArtifactType}" description="${%ArtifactTypeDescr}" onload="changeArtifactType()" onchange="changeArtifactType(value)" checkMethod="post" /><br />
+	       <f:select field="artifactType" default="" title="${%ArtifactType}" description="${%ArtifactTypeDescr}" onload="changeArtifactType(${promotionId}, value)" onchange="changeArtifactType(${promotionId}, value)" checkMethod="post" /><br />
 	        ${%ArtifactTypeDescr}<br />
       </p>
-       <p id="workspace">
+       <p id="workspace-${promotionId}">
 	        ${%Workspace}<br />
     	   <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" /><br />
 	        ${%WorkspaceDescr}<br />
     	</p>
-       <p id="task">
+       <p id="task-${promotionId}">
 	        ${%Task}<br />
     	   <f:select field="task" default="" /><br />
         	${%TaskDescr}<br />
 		</p>
-       <p id="plan">
+       <p id="plan-${promotionId}">
 	        ${%Plan}<br />
     	   <f:select field="plan" default="" /><br />
         	${%PlanDescr}<br />
 		</p>
-		<p id="artifact">
+		<p id="artifact-${promotionId}">
 	        ${%Artifact}<br />
        		<f:select field="artifact" default="" title="${%Artifact}" description="${%ArtifactDescr}" /><br />
 	        ${%ArtifactDescr}<br />
@@ -57,8 +34,12 @@
     </f:entry>
 
 	<script>
-		/* Initialize dropdowns */
-		changeArtifactType(document.getElementById('artifacttype').querySelector('select').value)
+		/* Initialize dropdowns
+		wait a little bit for the DOM to load
+		*/
+		setTimeout(function(){
+			changeArtifactType(${promotionId}, document.getElementById('artifacttype-' + ${promotionId}).querySelector('select').value)
+		}, 50)
 	</script> 	
 
 
