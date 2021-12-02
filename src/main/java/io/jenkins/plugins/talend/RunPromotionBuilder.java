@@ -139,8 +139,8 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
     /**
      * 
      * Outdated for api version 1.2, but good to glance over
-     * @see https://community.talend.com/s/article/Using-the-Talend-Cloud-Management-Console-Public-API-O2Ndn?language=en_US
-     * @see https://help.talend.com/r/en-US/Cloud/management-console-with-pipeline-designer/manage-promotion 
+     * @see <a href="https://community.talend.com/s/article/Using-the-Talend-Cloud-Management-Console-Public-API-O2Ndn?language=en_US">Using the Talend Cloud API</a>
+     * @see <a href="https://help.talend.com/r/en-US/Cloud/management-console-with-pipeline-designer/manage-promotion">Managing Promotoions</a>
      */
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException {
