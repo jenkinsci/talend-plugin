@@ -1,4 +1,4 @@
- package io.jenkins.plugins.talend;
+package io.jenkins.plugins.talend;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -213,6 +213,7 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
             if (item == null) { // no context
             	return model;
             }
+            item.checkPermission(Item.CONFIGURE);
 			return TalendLookupHelper.getEnvironmentList();
 		}
 

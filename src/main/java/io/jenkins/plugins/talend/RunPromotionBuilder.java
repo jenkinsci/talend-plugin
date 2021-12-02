@@ -225,12 +225,14 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
     	private int jsLastPromotion;
+    	
     	@POST
         public ListBoxModel doFillPromotionItems(@CheckForNull @AncestorInPath Item item, @QueryParameter String artifactType) {
             ListBoxModel model = new ListBoxModel();
             if (item == null) { // no context
             	return model;
             }
+            item.checkPermission(Item.CONFIGURE);
         	return TalendLookupHelper.getPromotionList();
         }
     	
