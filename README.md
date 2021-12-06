@@ -6,6 +6,7 @@ The Talend plugin connects your Jenkins to [Talend Cloud](https://cloud.talend.c
 
 - Create a Task
 - Run a Task
+- Run a Promotion
 
 ## Getting started
 
