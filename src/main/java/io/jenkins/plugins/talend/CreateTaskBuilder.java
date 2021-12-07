@@ -149,11 +149,10 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 		listener.getLogger().println("artifactname=" + tArtifact);
         String id = "";
 
-		TalendCredentials credentials = TalendLookupHelper.getTalendCredentials();
-		TalendCloudRegion region = TalendLookupHelper.getTalendRegion();
-
-		
         try {
+			TalendCredentials credentials = TalendLookupHelper.getTalendCredentials();
+			TalendCloudRegion region = TalendLookupHelper.getTalendRegion();
+
             ExecutableTask executableTask = ExecutableTask.instance(credentials, region);
             ArtifactService artifactService = ArtifactService.instance(credentials, region);
 
@@ -224,21 +223,17 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             	listener.getLogger().println("The TaskID is stored in Environment variable TALEND_NEW_TASK_ID ");
             	env.put("TALEND_NEW_TASK_ID", id);
         	} else if (artifacts.length == 0) {
-            	throw new Exception("Artifact " + tArtifact + " Not Found");
+            	throw new IOException("Artifact " + tArtifact + " Not Found");
         	}
     		listener.getLogger().println("*** CREATETASK ***");
             Thread.sleep(10);  // to include the InterruptedException
-        } catch(RuntimeException ex){
+        } catch (RuntimeException ex){
         	throw ex;
-        } catch(TalendRestException ex){
-        	listener.getLogger().println(ex.getMessage());
-        	run.setResult(Result.FAILURE);
-        	throw new InterruptedException (ex.getMessage());
-        }
-          catch(Exception e) {
-        	listener.getLogger().println(e.getMessage());
-        	run.setResult(Result.FAILURE);
-          }
+	    } catch (InterruptedException ex){
+	    	throw ex;
+	    } catch (Exception e) {
+        	throw new IOException(e.getMessage());
+	    }
     }
 
     @Symbol("createTask")

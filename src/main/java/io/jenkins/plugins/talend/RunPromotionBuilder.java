@@ -153,10 +153,10 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
 		listener.getLogger().println("plan = " + tPlan);
 		listener.getLogger().println("artifact = " + tArtifact);
 
-		TalendCredentials credentials = TalendLookupHelper.getTalendCredentials();
-		TalendCloudRegion region = TalendLookupHelper.getTalendRegion();
-
 		try {
+			TalendCredentials credentials = TalendLookupHelper.getTalendCredentials();
+			TalendCloudRegion region = TalendLookupHelper.getTalendRegion();
+
         	String artifactId = "";
         	String promotionId = TalendLookupHelper.getPromotionIdByName(tPromotion);
         	switch (tArtifactType) {
@@ -200,25 +200,23 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
 
                 ExecutionPromotionResponse execution = executionPromotionService.get(executionResponse.getExecutionId());
                 if (!execution.getStatus().equals("PROMOTED")) {
-                    throw new InterruptedException("Job Completed in non Successful State :" + execution.toString());
+                    throw new IOException("Job Completed in non Successful State :" + execution.toString());
                 } else {
                 	//TODO: Parse full Promotion Report
                 	LOGGER.info("Job Finished Succesfully");
                 }
         	} else {
-        		throw new InterruptedException("There is nothing to promote");
+        		throw new IOException("There is nothing to promote");
         	}
     		listener.getLogger().println("*** RUNPROMOTION ***");            
             Thread.sleep(10);  // to include the InterruptedException
-        } catch(TalendRestException ex){
-        	listener.getLogger().println(ex.getMessage());
-        	run.setResult(Result.FAILURE);
-        	throw new InterruptedException (ex.getMessage());
-        }
-          catch(Exception e) {
-        	listener.getLogger().println(e.getMessage());
-        	run.setResult(Result.FAILURE);
-          }
+        } catch (RuntimeException ex){
+        	throw ex;
+	    } catch (InterruptedException ex){
+	    	throw ex;
+	    } catch (Exception e) {
+        	throw new IOException(e.getMessage());
+	    }
     }
 
     @Symbol("runPromotion")

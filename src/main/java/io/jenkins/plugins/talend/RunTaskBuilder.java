@@ -108,24 +108,25 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 		listener.getLogger().println("parameters=" + tParameters);
 		String id = "";
 
-		TalendCredentials credentials = TalendLookupHelper.getTalendCredentials();
-		TalendCloudRegion region = TalendLookupHelper.getTalendRegion();
-
 		try {
+			TalendCredentials credentials = TalendLookupHelper.getTalendCredentials();
+			TalendCloudRegion region = TalendLookupHelper.getTalendRegion();
 
 			if (!tTask.isEmpty()) {
 				id = TalendLookupHelper.getTaskIdByName(tEnvironment, tWorkspace, tTask);
 
 			} else {
-				throw new Exception("No Task provided!");
+				throw new IOException("No Task provided!");
 			}
-
+			
+			if (id.isEmpty()) {
+				throw new IOException("No task with name '" + tTask + "' found.");				
+			}
+			
 			listener.getLogger().println("Found Task with id: " + id);
 
 			ExecutionRequest executionRequest = new ExecutionRequest();
-    		listener.getLogger().println("*** 4  RUNTASK ***");
 			executionRequest.setExecutable(id);
-    		listener.getLogger().println("*** 3  RUNTASK ***");
 			
 			String[] values = tParameters.split("\n");
 			Map<String, String> parameters = new HashMap<>();
@@ -146,9 +147,7 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 			 * TODO: Read all the logs until finished
 			 * 
 			 */
-    		listener.getLogger().println("*** 2  RUNTASK ***");
 			ExecutionService executionService = ExecutionService.instance(credentials, region);
-    		listener.getLogger().println("*** 1  RUNTASK ***");
 			ExecutionResponse executionResponse = executionService.post(executionRequest);
 			listener.getLogger().println("Talend Task Started: " + executionResponse.getExecutionId());
             while (true) {
@@ -156,7 +155,7 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
                 Execution execution = executionService.get(executionResponse.getExecutionId());
                 if (execution.getFinishTimestamp() != null) {
                     if (!execution.getExecutionStatus().equals("EXECUTION_SUCCESS")) {
-                        throw new InterruptedException("Job Completed in non Successful State :" + execution.toString());
+                        throw new IOException("Job Completed in non Successful State :" + execution.toString());
                     } else {
                     	LOGGER.info("Job Finished Succesfully");
                     }
@@ -168,39 +167,13 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
     		listener.getLogger().println("*** RUNTASK ***");
 
 			Thread.sleep(10); // to include the InterruptedException
-		}
-		 catch(IOException ex){
-		    	String message = ex.getMessage();
-		    	listener.getLogger().println("**** ERROR2 ****");
-		    	listener.getLogger().println(message);
-		    	run.setResult(Result.FAILURE);
-		    	listener.getLogger().println("**** ERROR2 ****");
-		    	throw new InterruptedException (message);
-		    
-		        }
-		catch(TalendRestException ex){
-        	String message = ex.getMessage();
-        	listener.getLogger().println("**** ERROR1 ****");
-        	listener.getLogger().println(message);
-        	run.setResult(Result.FAILURE);
-        	listener.getLogger().println("**** ERROR1 ****");
-        	throw new InterruptedException (message);
-        
-    } catch(NullPointerException ex){
-        	String message = ex.getMessage();
-        	listener.getLogger().println("**** ERROR3 ****");
-        	listener.getLogger().println(message);
-        	run.setResult(Result.FAILURE);
-        	listener.getLogger().println("**** ERROR3 ****");
-        	throw new InterruptedException (message);
-        }
-	 catch (RuntimeException e) {
-		throw e;
-    }          catch(Exception e) {
-        	listener.getLogger().println(e.getMessage());
-        	run.setResult(Result.FAILURE);
-          }
-
+	    } catch (RuntimeException ex){
+	    	throw ex;
+	    } catch (InterruptedException ex){
+	    	throw ex;
+	    } catch (Exception e) {
+	    	throw new IOException(e.getMessage());
+	    }
 	}
 
 	@Extension
