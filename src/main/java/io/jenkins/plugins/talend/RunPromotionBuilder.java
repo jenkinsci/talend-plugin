@@ -178,7 +178,6 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
         		default: 
         			artifactId = "";
         	}
-            LOGGER.info("artifactid = " + artifactId);
         	
         	if (!artifactId.isEmpty() || tArtifactType.equals("ENVIRONMENT")) {
 				ExecutionPromotionRequest promotionRequest = new ExecutionPromotionRequest();
@@ -191,22 +190,22 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
 					advanced.setArtifactType(tArtifactType);
 					promotionRequest.setAdvanced(advanced);
 				}
-	            LOGGER.info("Going to promote " + promotionRequest.toString() );
+				listener.getLogger().println("Going to promote " + promotionRequest.toString() );
 
 
 	            ExecutionPromotionService executionPromotionService = ExecutionPromotionService.instance(credentials, region);
 	            ExecutionResponse executionResponse = executionPromotionService.post(promotionRequest);
-	            LOGGER.info("Promotion started. The ID of the execution is" + executionResponse.getExecutionId() );
+	            listener.getLogger().println("Promotion started. The ID of the execution is" + executionResponse.getExecutionId() );
 
                 ExecutionPromotionResponse execution = executionPromotionService.get(executionResponse.getExecutionId());
                 if (!execution.getStatus().equals("PROMOTED")) {
                     throw new IOException("Job Completed in non Successful State :" + execution.toString());
                 } else {
                 	//TODO: Parse full Promotion Report
-                	LOGGER.info("Job Finished Succesfully");
+                	listener.getLogger().println("Promotion Finished Succesfully");
                 }
         	} else {
-        		throw new IOException("There is nothing to promote");
+        		throw new IOException("Not enough information provided to find what needs to be promoted");
         	}
     		listener.getLogger().println("*** RUNPROMOTION ***");            
             Thread.sleep(10);  // to include the InterruptedException
