@@ -8,10 +8,45 @@
         ${%Workspace}<br />
       <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" />
         ${%RuntimeType}<br />
-      <f:select field="runtimeType" default="" title="${%RuntimeType}" description="${%RuntimeTypeDescr}" />
-        ${%Workspace}<br />
-      <f:select field="runtime" default="" title="${%Runtime}" description="${%RuntimeDescr}" />
+      <f:select field="runtimeType" default="" title="${%RuntimeType}" description="${%RuntimeTypeDescr}" onchange="displayRuntime(${creatorId}, value)" />
+      <p id="field-runtime-${creatorId}" >
+        ${%Runtime}<br />
+      	<f:select field="runtime" default="" title="${%Runtime}" description="${%RuntimeDescr}" />
+      </p>
     </f:entry>
+    
+    <f:entry>
+    <f:booleanRadio field="isJob" true="Job" false="Pipeline" title="Artifact Type"/>
+     </f:entry>
+    
+    <f:section title="Type of Artifact">
+    <f:radioBlock name="artifactType" value="BUILTIN_EXPLORER" checked="${instance.isTestType('BUILTIN_EXPLORER')}" title="Job" inline="true">
+      <f:nested>
+        <f:entry title="Username" field="username" description="A username to use if the Explorer encounters a login form. If not supplied, no username will be inserted.">
+          <f:textbox/>
+        </f:entry>
+        <f:entry title="Password" field="password" description="A password to use if the Explorer encounters a login form. If not supplied, no password will be inserted.">
+          <f:password/>
+        </f:entry>
+      </f:nested>
+    </f:radioBlock>
+
+    <f:radioBlock name="artifactType" value="BUILTIN_FUZZ" checked="${instance.isTestType('BUILTIN_FUZZ')}" title="Pipeline" inline="true">
+      <f:nested>
+        <f:entry title="Event Count" field="eventCount" description="[Optional] Number of fuzz events.">
+          <f:textbox/>
+        </f:entry>
+        <f:entry title="Event Throttle" field="eventThrottle" description="[Optional] Number for event throttle.">
+          <f:textbox/>
+        </f:entry>
+        <f:entry title="Seed" field="seed" description="[Optional] Seed to use for randomizing events.">
+          <f:textbox/>
+        </f:entry>
+      </f:nested>
+    </f:radioBlock>
+    </f:section>
+    
+    
     <f:entry field="artifact" default="" title="${%Artifact}" description="${%ArtifactDescr}">
       <f:textbox checkMethod="post" />
     </f:entry>

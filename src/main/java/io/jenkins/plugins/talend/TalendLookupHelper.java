@@ -9,8 +9,10 @@ import org.apache.cxf.jaxrs.ext.search.client.SearchConditionBuilder;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 
 import com.talend.tmc.dom.Artifact;
+import com.talend.tmc.dom.Cluster;
 import com.talend.tmc.dom.Engine;
 import com.talend.tmc.dom.Executable;
+import com.talend.tmc.dom.PipelineEngine;
 import com.talend.tmc.dom.Promotion;
 import com.talend.tmc.dom.Workspace;
 import com.talend.tmc.services.TalendBearerAuth;
@@ -21,17 +23,30 @@ import com.talend.tmc.services.artifacts.ArtifactService;
 import com.talend.tmc.services.executables.ExecutablePlanService;
 import com.talend.tmc.services.executables.ExecutablePromotionService;
 import com.talend.tmc.services.executables.ExecutableTaskService;
+import com.talend.tmc.services.runtime.ClusterService;
 import com.talend.tmc.services.runtime.EngineService;
+import com.talend.tmc.services.runtime.PipelineEngineService;
 import com.talend.tmc.services.workspaces.WorkspaceService;
 
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.GlobalConfiguration;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class TalendLookupHelper.
+ */
 public class TalendLookupHelper {
+	
+	/** The Constant LOGGER. */
 	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 	private static final Logger LOGGER = Logger.getLogger(GlobalConfiguration.class.getName());
 
+	/**
+	 * Gets the environment list.
+	 *
+	 * @return the environment list
+	 */
 	public static ListBoxModel getEnvironmentList() {
 		ListBoxModel model = new ListBoxModel();
 
@@ -58,6 +73,12 @@ public class TalendLookupHelper {
 		return model;
 	}
 	
+	/**
+	 * Gets the environment id by name.
+	 *
+	 * @param environment the environment
+	 * @return the environment id by name
+	 */
 	public static String getEnvironmentIdByName(String environment) {
 		if (environment == null) {
 			LOGGER.warning("environment is null");
@@ -83,6 +104,11 @@ public class TalendLookupHelper {
 		return result;		
 	}
 	
+	/**
+	 * Gets the promotion list.
+	 *
+	 * @return the promotion list
+	 */
 	public static ListBoxModel getPromotionList() {
 		ListBoxModel model = new ListBoxModel();
 
@@ -102,6 +128,12 @@ public class TalendLookupHelper {
 		return model;
 	}
 	
+	/**
+	 * Gets the promotion id by name.
+	 *
+	 * @param promotion the promotion
+	 * @return the promotion id by name
+	 */
 	public static String getPromotionIdByName(String promotion) {
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
@@ -122,6 +154,13 @@ public class TalendLookupHelper {
 		return result;		
 	}
 
+	/**
+	 * Gets the workspace id by name.
+	 *
+	 * @param environment the environment
+	 * @param workspace the workspace
+	 * @return the workspace id by name
+	 */
 	public static String getWorkspaceIdByName(String environment, String workspace) {
 		TalendCredentials credentials = getTalendCredentials();
 		TalendCloudRegion region = getTalendRegion();
@@ -142,6 +181,12 @@ public class TalendLookupHelper {
 		return result;
 	}
 	
+	/**
+	 * Gets the workspace list.
+	 *
+	 * @param environment the environment
+	 * @return the workspace list
+	 */
 	public static ListBoxModel getWorkspaceList(String environment) {
         ListBoxModel model = new ListBoxModel();
 		if (environment == null) {
@@ -179,6 +224,13 @@ public class TalendLookupHelper {
 		return model;
 	}
 	
+	/**
+	 * Gets the task list.
+	 *
+	 * @param environment the environment
+	 * @param workspace the workspace
+	 * @return the task list
+	 */
 	public static ListBoxModel getTaskList(String environment, String workspace) {
 		ListBoxModel model = new ListBoxModel();
 		if (environment == null) {
@@ -207,6 +259,14 @@ public class TalendLookupHelper {
 		return model;
 	}
 
+	/**
+	 * Gets the task id by name.
+	 *
+	 * @param environment the environment
+	 * @param workspace the workspace
+	 * @param task the task
+	 * @return the task id by name
+	 */
 	public static String getTaskIdByName(String environment, String workspace, String task) {
 		if (environment == null) {
 			LOGGER.warning("environment is null");
@@ -235,6 +295,13 @@ public class TalendLookupHelper {
 		return result;
 	}
 
+	/**
+	 * Gets the plan list.
+	 *
+	 * @param environment the environment
+	 * @param workspace the workspace
+	 * @return the plan list
+	 */
 	public static ListBoxModel getPlanList(String environment, String workspace) {
 		ListBoxModel model = new ListBoxModel();
 		if (environment == null) {
@@ -264,6 +331,14 @@ public class TalendLookupHelper {
 		return model;
 	}
 
+	/**
+	 * Gets the plan id by name.
+	 *
+	 * @param environment the environment
+	 * @param workspace the workspace
+	 * @param plan the plan
+	 * @return the plan id by name
+	 */
 	public static String getPlanIdByName(String environment, String workspace, String plan) {
 		if (environment == null) {
 			LOGGER.warning("environment is null");
@@ -292,6 +367,13 @@ public class TalendLookupHelper {
 		return result;
 	}
 
+	/**
+	 * Gets the artifact list.
+	 *
+	 * @param environment the environment
+	 * @param workspace the workspace
+	 * @return the artifact list
+	 */
 	public static ListBoxModel getArtifactList(String environment, String workspace) {
 		ListBoxModel model = new ListBoxModel();
 		if (environment == null) {
@@ -320,6 +402,14 @@ public class TalendLookupHelper {
 		return model;
 	}
 
+	/**
+	 * Gets the artifact id by name.
+	 *
+	 * @param environment the environment
+	 * @param workspace the workspace
+	 * @param artifact the artifact
+	 * @return the artifact id by name
+	 */
 	public static String getArtifactIdByName(String environment, String workspace, String artifact) {
 		if (environment == null) {
 			LOGGER.warning("environment is null");
@@ -347,6 +437,14 @@ public class TalendLookupHelper {
 
 		return result;
 	}
+	
+	/**
+	 * Gets the remote engine id by name.
+	 *
+	 * @param environment the environment
+	 * @param runtime the runtime
+	 * @return the remote engine id by name
+	 */
 	public static String getRemoteEngineIdByName(String environment, String runtime) {
 		if (environment == null) {
 			LOGGER.warning("environment is null");
@@ -376,6 +474,12 @@ public class TalendLookupHelper {
 		return result;
 	}
 
+	/**
+	 * Gets the remote engine list.
+	 *
+	 * @param environment the environment
+	 * @return the remote engine list
+	 */
 	static ListBoxModel getRemoteEngineList(String environment) {
 		ListBoxModel model = new ListBoxModel();
 		if (environment == null) {
@@ -403,11 +507,160 @@ public class TalendLookupHelper {
     	return model;
 	}
 
+	/**
+	 * Gets the cluster id by name.
+	 *
+	 * @param environment the environment
+	 * @param runtime the runtime
+	 * @return the cluster id by name
+	 */
+	public static String getClusterIdByName(String environment, String runtime) {
+		if (environment == null) {
+			LOGGER.warning("environment is null");
+			return "";
+		}
+		String result = "";
+
+		TalendCredentials credentials = getTalendCredentials();
+		TalendCloudRegion region = getTalendRegion();
+
+    	try {
+    		ClusterService clusterService = ClusterService.instance(credentials, region);
+
+    		String environmentId = getEnvironmentIdByName(environment);
+
+    		SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
+    	
+    		String query = fiql.is("workspace.environment.id").equalTo(environmentId).and().is("name").equalTo(runtime).query();
+	    	Cluster[] clusters = clusterService.get(query);
+			if (clusters.length > 0) {
+				result = clusters[0].getId();
+			}
+		} catch (TalendRestException | IOException ex) {
+			LOGGER.warning(ex.getMessage());
+		}
+
+		return result;
+	}
+
+	/**
+	 * Gets the cluster list.
+	 *
+	 * @param environment the environment
+	 * @return the cluster list
+	 */
+	static ListBoxModel getClusterList(String environment) {
+		ListBoxModel model = new ListBoxModel();
+		if (environment == null) {
+			LOGGER.warning("environment is null");
+			return model;
+		}
+		TalendCredentials credentials = getTalendCredentials();
+		TalendCloudRegion region = getTalendRegion();
+		
+		String environmentId = getEnvironmentIdByName(environment);
+		
+    	try {
+    		ClusterService clusterService = ClusterService.instance(credentials, region);
+
+    		SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
+    	
+    		String query = fiql.is("workspace.environment.id").equalTo(environmentId).and().is("status").equalTo("PAIRED").query();
+	    	Cluster[] clusters = clusterService.get(query);
+			for (Cluster cluster : clusters) {
+				model.add(cluster.getName(), cluster.getName());
+			}
+		} catch (TalendRestException | IOException ex) {
+			LOGGER.warning(ex.getMessage());
+		}
+    	return model;
+	}
+
+	
+	/**
+	 * Gets the pipeline engine id by name.
+	 *
+	 * @param environment the name of the environment
+	 * @param runtime the name of the runtime
+	 * @return the pipeline engine id by name
+	 */
+	public static String getPipelineEngineIdByName(String environment, String runtime) {
+		if (environment == null) {
+			LOGGER.warning("environment is null");
+			return "";
+		}
+		String result = "";
+
+		TalendCredentials credentials = getTalendCredentials();
+		TalendCloudRegion region = getTalendRegion();
+
+    	try {
+    		PipelineEngineService pipelineEngineService = PipelineEngineService.instance(credentials, region);
+
+    		String environmentId = getEnvironmentIdByName(environment);
+
+    		SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
+    	
+    		String query = fiql.is("workspace.environment.id").equalTo(environmentId).and().is("name").equalTo(runtime).query();
+    		PipelineEngine[] pipelineEngines = pipelineEngineService.get(query);
+			if (pipelineEngines.length > 0) {
+				result = pipelineEngines[0].getId();
+			}
+		} catch (TalendRestException | IOException ex) {
+			LOGGER.warning(ex.getMessage());
+		}
+
+		return result;
+	}
+
+	/**
+	 * Gets the pipeline engine list.
+	 *
+	 * @param environment the environment
+	 * @return the pipeline engine list
+	 */
+	static ListBoxModel getPipelineEngineList(String environment) {
+		ListBoxModel model = new ListBoxModel();
+		if (environment == null) {
+			LOGGER.warning("environment is null");
+			return model;
+		}
+		TalendCredentials credentials = getTalendCredentials();
+		TalendCloudRegion region = getTalendRegion();
+		
+		String environmentId = getEnvironmentIdByName(environment);
+		
+    	try {
+    		PipelineEngineService pipelineEngineService = PipelineEngineService.instance(credentials, region);
+
+    		SearchConditionBuilder fiql = SearchConditionBuilder.instance("fiql");
+    	
+    		String query = fiql.is("workspace.environment.id").equalTo(environmentId).and().is("status").equalTo("PAIRED").query();
+    		PipelineEngine[] pipelineEngines = pipelineEngineService.get(query);
+			for (PipelineEngine pipelineEngine : pipelineEngines) {
+				model.add(pipelineEngine.getName(), pipelineEngine.getName());
+			}
+		} catch (TalendRestException | IOException ex) {
+			LOGGER.warning(ex.getMessage());
+		}
+    	return model;
+	}
+
+	/**
+	 * Gets the talend region.
+	 *
+	 * @return the talend region
+	 */
 	static TalendCloudRegion getTalendRegion() {
 		String region = TalendConfiguration.get().getRegion();
 	    return TalendCloudRegion.valueOf(region);
 	}
 	
+	/**
+	 * Gets the talend credentials.
+	 *
+	 * @return the talend credentials
+	 */
 	static TalendCredentials getTalendCredentials() {
 		// TODO: die gracefully when there are no credentials yet 
 		String api = ""; 

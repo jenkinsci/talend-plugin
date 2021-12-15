@@ -60,6 +60,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     private String tArtifact;
     private String tRuntimeType;
     private String tRuntime;
+    private boolean tIsjob = true;
 	private String tParameters = "";
 	private String tAutoUpgradable = "true";
 	private String tOverrideWithDefaultParameters = "false";
@@ -103,6 +104,15 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     @DataBoundSetter
     public void setRuntime(String value) {
         this.tRuntime = value;
+    }
+
+    public boolean getIsjob() {
+        return tIsjob;
+    }
+
+    @DataBoundSetter
+    public void setIsjob(boolean value) {
+        this.tIsjob = value;
     }
 
     public String getRuntime() {
@@ -199,8 +209,21 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 
         		id = createdTask.getId();
             	listener.getLogger().println("New Task has Id =" + id);
+            	String engineId = "";
+            	
+				switch (tRuntimeType) {
+			    case "CLOUD":  			engineId = TalendLookupHelper.getPipelineEngineIdByName(tEnvironment, tRuntime);
+			         				break;
+			    case "REMOTE_ENGINE":	engineId = TalendLookupHelper.getRemoteEngineIdByName(tEnvironment, tRuntime);
+			         				break;
+			    case "REMOTE_ENGINE_CLUSTER":	engineId = TalendLookupHelper.getClusterIdByName(tEnvironment, tRuntime);
+									break;
+			    case "CLOUD_EXCLUSIVE":	engineId = "";
+									break;
+			    default: engineId = "";
+			}
 
-            	String engineId = TalendLookupHelper.getRemoteEngineIdByName(tEnvironment, tRuntime);
+//            	String engineId = TalendLookupHelper.getRemoteEngineIdByName(tEnvironment, tRuntime);
             	if (!engineId.isEmpty()) {
                 	RunConfig runConfig = new RunConfig();
                 	Trigger trigger = new Trigger();
@@ -285,11 +308,11 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             item.checkPermission(Item.CONFIGURE);
         	if (!environment.isEmpty()) {
 				switch (runtimeType) {
-				    case "CLOUD":  			model.add("Runtime Type Not Implemented", "NOT");
+				    case "CLOUD":  			model = TalendLookupHelper.getPipelineEngineList(environment);
 				         				break;
 				    case "REMOTE_ENGINE":	model = TalendLookupHelper.getRemoteEngineList(environment);
 				         				break;
-				    case "REMOTE_ENGINE_CLUSTER":	model.add("Runtime Type Not Implemented", "NOT");
+				    case "REMOTE_ENGINE_CLUSTER":	model = TalendLookupHelper.getClusterList(environment);
 										break;
 				    case "CLOUD_EXCLUSIVE":	model.add("Runtime Type Not Implemented", "NOT");
 										break;
