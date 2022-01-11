@@ -4,7 +4,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.annotation.CheckForNull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
@@ -30,8 +30,8 @@ import org.apache.commons.lang.StringUtils;
 public class CredentialsHelper {
 	private static final Logger LOGGER = Logger.getLogger(CredentialsHelper.class.getName());
 	static private String url = "http://talend.com";
-	@CheckForNull
-	protected static StringCredentials lookupSystemCredentials(@CheckForNull String credentialsId) {
+	@edu.umd.cs.findbugs.annotations.CheckForNull
+	protected static StringCredentials lookupSystemCredentials(@edu.umd.cs.findbugs.annotations.CheckForNull String credentialsId) {
 		if (credentialsId == null) {
 			return null;
 		}

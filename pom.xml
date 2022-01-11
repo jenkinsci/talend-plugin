@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.31</version>
+        <version>4.33</version>
         <relativePath />
     </parent>
     <groupId>io.jenkins.plugins</groupId>
@@ -16,7 +16,7 @@
         <changelist></changelist>
 
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
-        <jenkins.version>2.277.1</jenkins.version>
+        <jenkins.version>2.289.1</jenkins.version>
         <java.level>8</java.level>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>    </properties>
     <name>Talend</name>
@@ -62,7 +62,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>jackson2-api</artifactId>
-            <version>2.13.0-230.v59243c64b0a5</version>
+            <version>2.13.1-246.va8a9f3eaf46a</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
@@ -78,9 +78,9 @@
             <version>3.4.5</version>
         </dependency>
         <dependency>
-    		<groupId>com.talend</groupId>
-		    <artifactId>tmc_rest_api</artifactId>
-    		<version>2.6.0</version>
+            <groupId>com.talend</groupId>
+            <artifactId>tmc_rest_api</artifactId>
+            <version>2.6.1</version>
         </dependency>
     </dependencies>
 
