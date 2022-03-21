@@ -57,6 +57,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 
     private String tEnvironment;
     private String tWorkspace;
+    private String tArtifactType;
     private String tArtifact;
     private String tRuntimeType;
     private String tRuntime;
@@ -86,6 +87,15 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
     @DataBoundSetter
     public void setWorkspace(String value) {
         this.tWorkspace = value;
+    }
+
+    @DataBoundSetter
+    public void setArtifactType(String value) {
+        this.tArtifactType = value;
+    }
+
+    public String getArtifactType() {
+        return tArtifactType;
     }
 
     public String getArtifact() {
@@ -156,6 +166,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 		listener.getLogger().println("*** CREATETASK ***");
 		listener.getLogger().println("environment=" + tEnvironment);
 		listener.getLogger().println("workspace=" + tWorkspace);
+		listener.getLogger().println("artifacttype=" + tArtifactType);
 		listener.getLogger().println("artifactname=" + tArtifact);
         String id = "";
 
@@ -185,24 +196,27 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
         		newTask.setArtifact(artifactMap);
 
         		Map<String, String> AutoUpgradeInfoMap = new HashMap<>();
-        		AutoUpgradeInfoMap.put("autoUpgradable", tAutoUpgradable);
-        		AutoUpgradeInfoMap.put("overrideWithDefaultParameters", tOverrideWithDefaultParameters);
-        		newTask.setAutoUpgradeInfo(AutoUpgradeInfoMap);
+        		if (!tArtifactType.equals("DATA_SERVICE") && !tArtifactType.equals("ROUTE")) {
+        			listener.getLogger().println("Going to set autoUpgradable");
+        			AutoUpgradeInfoMap.put("autoUpgradable", tAutoUpgradable);
+        			AutoUpgradeInfoMap.put("overrideWithDefaultParameters", tOverrideWithDefaultParameters);
+        			newTask.setAutoUpgradeInfo(AutoUpgradeInfoMap);
 
-				String[] values = tParameters.split("\n");
-				Map<String, String> parameters = new HashMap<>();
-				for (int i = 0; i < values.length; i++) {
-					if (!(values[i].indexOf("=") < 0) ) {
-						String key =values[i].split("=")[0].trim();
-						String value =values[i].split("=")[1].trim();
-						if (key.length() > 0 && value.length() > 0) {
-							parameters.put(key, value);
+					String[] values = tParameters.split("\n");
+					Map<String, String> parameters = new HashMap<>();
+					for (int i = 0; i < values.length; i++) {
+						if (!(values[i].indexOf("=") < 0) ) {
+							String key =values[i].split("=")[0].trim();
+							String value =values[i].split("=")[1].trim();
+							if (key.length() > 0 && value.length() > 0) {
+								parameters.put(key, value);
+							}
 						}
 					}
-				}
-				if (parameters.size() > 0) {
-					newTask.setParameters(parameters);
-				}
+					if (parameters.size() > 0) {
+						newTask.setParameters(parameters);
+					}
+        		}
 	            LOGGER.info("Going to create task :" + newTask.toString() );
 
 				Task createdTask = executableTask.create(newTask);
@@ -212,13 +226,11 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             	String engineId = "";
             	
 				switch (tRuntimeType) {
-			    case "CLOUD":  			engineId = TalendLookupHelper.getPipelineEngineIdByName(tEnvironment, tRuntime);
+			    case "GEN2":  			engineId = TalendLookupHelper.getPipelineEngineIdByName(tEnvironment, tRuntime);
 			         				break;
 			    case "REMOTE_ENGINE":	engineId = TalendLookupHelper.getRemoteEngineIdByName(tEnvironment, tRuntime);
 			         				break;
 			    case "REMOTE_ENGINE_CLUSTER":	engineId = TalendLookupHelper.getClusterIdByName(tEnvironment, tRuntime);
-									break;
-			    case "CLOUD_EXCLUSIVE":	engineId = "";
 									break;
 			    default: engineId = "";
 			}
@@ -226,21 +238,28 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 //            	String engineId = TalendLookupHelper.getRemoteEngineIdByName(tEnvironment, tRuntime);
             	if (!engineId.isEmpty()) {
                 	RunConfig runConfig = new RunConfig();
-                	Trigger trigger = new Trigger();
-                	trigger.setType("MANUAL");
-                	runConfig.setTrigger(trigger);
+            		
                 	Runtime runtime = new Runtime();
                 	runtime.setId(engineId);
                 	runtime.setType(tRuntimeType);
                 	runConfig.setRuntime(runtime);
+            		
+            		if (tRuntimeType.equals("REMOTE_ENGINE") || tRuntimeType.equals("REMOTE_ENGINE_CLUSTER")) {
+                    	Trigger trigger = new Trigger();
+                    	trigger.setType("MANUAL");
+                    	runConfig.setTrigger(trigger);
+            		} 
                 	// This can only be set on Clusters
-//	                	runConfig.setParallelExecutionAllowed("false");
+                	if (tRuntimeType.equals("REMOTE_ENGINE_CLUSTER")) {
+                      runConfig.setParallelExecutionAllowed("false");
+                	}
                     ExecutableRunConfig executableRunConfig = ExecutableRunConfig.instance(credentials, region);
     	            LOGGER.info("Going to add RunConfig :" + executableRunConfig.toString() );
 
                     executableRunConfig.update("task", id, runConfig);
+            	
             	} else {
-                	listener.getLogger().println("No Engine in Workspace available, skipping updating RunConfig");            		
+                	listener.getLogger().println("No Engine in Workspace available, skipping updating RunConfig");
             	}
             	
             	listener.getLogger().println("The TaskID is stored in Environment variable TALEND_NEW_TASK_ID ");
@@ -289,13 +308,44 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
         	}
         	return model;
 		}
-            	    	
-		public ListBoxModel doFillRuntimeTypeItems(@QueryParameter String environment) {
+
+		public ListBoxModel doFillArtifactTypeItems(@QueryParameter String environment) {
             ListBoxModel model = new ListBoxModel();
-            model.add("Cloud", "CLOUD");
-            model.add("Remote Engine", "REMOTE_ENGINE");
-            model.add("Cluster", "REMOTE_ENGINE_CLUSTER");
-            model.add("Cloud Exclusive","CLOUD_EXCLUSIVE");
+            model.add("Data Service", "DATA_SERVICE");
+            model.add("Job", "JOB");
+            model.add("Pipeline", "PIPELINE");
+            model.add("Route","ROUTE");
+            return model;
+		}
+
+		public ListBoxModel doFillRuntimeTypeItems(@AncestorInPath Item item, @QueryParameter String environment, @QueryParameter String artifactType) {
+            ListBoxModel model = new ListBoxModel();
+            if (item == null) { // no context
+            	return model;
+            }
+            item.checkPermission(Item.CONFIGURE);
+
+        	if (!environment.isEmpty()) {
+				switch (artifactType) {
+				case "DATA_SERVICE":
+		            model.add("Remote Engine", "REMOTE_ENGINE");
+		            model.add("Cluster", "REMOTE_ENGINE_CLUSTER");
+		            break;
+				case "JOB":
+		            model.add("Remote Engine", "REMOTE_ENGINE");
+		            model.add("Cluster", "REMOTE_ENGINE_CLUSTER");
+		            model.add("Cloud","CLOUD");
+		            break;
+				case "PIPELINE":
+		            model.add("Remote Gen2", "GEN2");
+		            break;
+				case "ROUTE":
+		            model.add("Remote Engine", "REMOTE_ENGINE");
+		            model.add("Cluster", "REMOTE_ENGINE_CLUSTER");
+		            break;
+			    default: model.add("Artifact Type Not Implemented", "NOT");
+				}
+        	}
             return model;
 		}
 
@@ -308,13 +358,11 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
             item.checkPermission(Item.CONFIGURE);
         	if (!environment.isEmpty()) {
 				switch (runtimeType) {
-				    case "CLOUD":  			model = TalendLookupHelper.getPipelineEngineList(environment);
+				    case "GEN2":  			model = TalendLookupHelper.getPipelineEngineList(environment);
 				         				break;
 				    case "REMOTE_ENGINE":	model = TalendLookupHelper.getRemoteEngineList(environment);
 				         				break;
 				    case "REMOTE_ENGINE_CLUSTER":	model = TalendLookupHelper.getClusterList(environment);
-										break;
-				    case "CLOUD_EXCLUSIVE":	model.add("Runtime Type Not Implemented", "NOT");
 										break;
 				    default: model.add("Runtime Type Not Implemented", "NOT");
 				}

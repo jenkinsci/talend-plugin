@@ -25,6 +25,7 @@ import com.talend.tmc.services.TalendCredentials;
 import com.talend.tmc.services.TalendRestException;
 import com.talend.tmc.services.executables.ExecutableTask;
 import com.talend.tmc.services.executions.ExecutionService;
+import com.talend.tmc.services.executions.TaskExecutionService;
 import com.talend.tmc.services.workspaces.WorkspaceService;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
@@ -150,9 +151,20 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 			ExecutionService executionService = ExecutionService.instance(credentials, region);
 			ExecutionResponse executionResponse = executionService.post(executionRequest);
 			listener.getLogger().println("Talend Task Started: " + executionResponse.getExecutionId());
-            while (true) {
-
-                Execution execution = executionService.get(executionResponse.getExecutionId());
+			
+			// Let that sink in
+			Thread.sleep(1000);
+			
+			TaskExecutionService taskExecutionService = TaskExecutionService.instance(credentials, region);
+			Execution[] firstExecutions = taskExecutionService.get(id);
+			String executionId = "";
+			if (firstExecutions.length > 0) {
+				listener.getLogger().println("Initial Status: " + firstExecutions[0].getExecutionStatus());
+				executionId = firstExecutions[0].getExecutionId();
+			}
+			
+            while (true && !executionId.isEmpty()) {
+                Execution execution = executionService.get(executionId);
                 if (execution.getFinishTimestamp() != null) {
                     if (!execution.getExecutionStatus().equals("EXECUTION_SUCCESS")) {
                         throw new IOException("Job Completed in non Successful State :" + execution.toString());

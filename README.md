@@ -25,16 +25,14 @@ broken. This is to keep the UI and the Pipeline versions act the same.
 
 ### Create a Task
 
-Create a Freestyle Job and add the build task "Talend Create Task". You can select the artifact that you want to base your task on 
-by first selecting the Environment, then the Workspace and then the Artifact.
-
+Create a Freestyle Job and add the build task "Talend Create Task". You can create Jobs, Routes, DataServices and Pipeline tasks.
+The Artifact name is a textbox so you can plan creating a task that where the Artifact has not been uploaded yet. (and use jenkins parameters).
 ![Create a New Task Image](docs/images/createtask.png "Create a New Task")
 
 ### Run a Task
 
 Create a Freestyle Job and add the build task "Talend Run Task". You can select the task by first selecting the 
 Environment, then the Workspace and then the Task.
-The Task is a textbox so you can plan running a task that has not been created yet (and use jenkins parameters).
 
 ![Run a Task Image](docs/images/runtask.png "Run a Task")
 

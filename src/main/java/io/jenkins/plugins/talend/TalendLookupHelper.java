@@ -69,7 +69,6 @@ public class TalendLookupHelper {
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
 		}
-
 		return model;
 	}
 	
