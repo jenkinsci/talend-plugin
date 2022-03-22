@@ -39,6 +39,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.GlobalConfiguration;
@@ -216,8 +217,8 @@ public class RunTaskBuilder extends Builder implements SimpleBuildStep {
 		}
 
         @POST
-		public ListBoxModel doFillTaskItems(@AncestorInPath Item item, @QueryParameter String environment, @QueryParameter String workspace) {
-            ListBoxModel model = new ListBoxModel();
+		public ComboBoxModel doFillTaskItems(@AncestorInPath Item item, @QueryParameter String environment, @QueryParameter String workspace) {
+        	ComboBoxModel model = new ComboBoxModel();
             if (item == null) { // no context
             	return model;
             }

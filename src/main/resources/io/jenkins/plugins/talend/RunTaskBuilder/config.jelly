@@ -6,7 +6,7 @@
         ${%Workspace}<br />
       <f:select field="workspace" default="" title="${%Workspace}" description="${%WorkspaceDescr}" />
         ${%Task}<br />
-      <f:select field="task" default="" title="${%Task}" description="${%TaskDescr}" checkMethod="post" autocomplete="true" />
+      <f:combobox field="task" default="" title="${%Task}" description="${%TaskDescr}" checkMethod="post" autocomplete="true" />
     </f:entry>
 
 	<f:optionalBlock name="dynamic" title="${%ExtraOptions}">

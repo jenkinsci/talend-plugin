@@ -18,7 +18,7 @@
     	</p>
        <p id="task-${promotionId}">
 	        ${%Task}<br />
-    	   <f:select field="task" default="" /><br />
+    	   <f:combobox field="task" default="" /><br />
         	${%TaskDescr}<br />
 		</p>
        <p id="plan-${promotionId}">

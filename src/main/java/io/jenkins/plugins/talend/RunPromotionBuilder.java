@@ -3,6 +3,7 @@ package io.jenkins.plugins.talend;
 import hudson.Launcher;
 import hudson.Extension;
 import hudson.FilePath;
+import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.model.AbstractProject;
@@ -264,8 +265,8 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
 		}
 
     	@POST
-    	public ListBoxModel doFillTaskItems(@AncestorInPath Item item, @QueryParameter String promotion, @QueryParameter String workspace) {
-            ListBoxModel model = new ListBoxModel();
+    	public ComboBoxModel doFillTaskItems(@AncestorInPath Item item, @QueryParameter String promotion, @QueryParameter String workspace) {
+            ComboBoxModel model = new ComboBoxModel();
             if (item == null) { // no context
             	return model;
             }

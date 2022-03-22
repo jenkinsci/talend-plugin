@@ -28,6 +28,7 @@ import com.talend.tmc.services.runtime.EngineService;
 import com.talend.tmc.services.runtime.PipelineEngineService;
 import com.talend.tmc.services.workspaces.WorkspaceService;
 
+import hudson.util.ComboBoxModel;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import jenkins.model.GlobalConfiguration;
@@ -230,8 +231,8 @@ public class TalendLookupHelper {
 	 * @param workspace the workspace
 	 * @return the task list
 	 */
-	public static ListBoxModel getTaskList(String environment, String workspace) {
-		ListBoxModel model = new ListBoxModel();
+	public static ComboBoxModel getTaskList(String environment, String workspace) {
+		ComboBoxModel model = new ComboBoxModel();
 		if (environment == null) {
 			LOGGER.warning("environment is null");
 			return model;
@@ -249,11 +250,12 @@ public class TalendLookupHelper {
 			Executable[] Executables = executableTaskService
 					.getByQuery("environmentId=" + environmentId + "&workspaceId=" + workspaceId);
 			for (Executable exec : Executables) {
-				model.add(exec.getName(), exec.getName());
+				model.add(exec.getName());
 			}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
 		}
+        
 
 		return model;
 	}
