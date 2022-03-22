@@ -9,9 +9,11 @@
     <f:entry>
         ${%ArtifactType}<br />
       <f:select field="artifactType" default="" title="${%ArtifactType}" description="${%ArtifactTypeDescr}" onchange="displayParameters(${creatorId}, value)" />
-    </f:entry>
-     <f:entry field="artifact" default="" title="${%Artifact}" description="${%ArtifactDescr}">
-      <f:textbox checkMethod="post" />
+        ${%Artifact}<br />
+      <p id="field-artifact-${creatorId}" >
+        <f:combobox field="artifact" default="" title="${%Artifact}" description="${%ArtifactDescr}" checkMethod="post" />
+        ${%ArtifactDescr} <br />
+	  </p>
     </f:entry>
     <f:entry>
             <p id="field-upgradableP-${creatorId}" >

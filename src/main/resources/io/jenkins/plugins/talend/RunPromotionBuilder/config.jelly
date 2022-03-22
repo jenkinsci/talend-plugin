@@ -28,7 +28,7 @@
 		</p>
 		<p id="artifact-${promotionId}">
 	        ${%Artifact}<br />
-       		<f:select field="artifact" default="" title="${%Artifact}" description="${%ArtifactDescr}" /><br />
+       		<f:combobox field="artifact" default="" title="${%Artifact}" description="${%ArtifactDescr}" /><br />
 	        ${%ArtifactDescr}<br />
 		</p>
     </f:entry>

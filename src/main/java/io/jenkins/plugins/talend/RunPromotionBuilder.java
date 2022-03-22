@@ -293,15 +293,15 @@ public class RunPromotionBuilder extends Builder implements SimpleBuildStep {
 		}
 
     	@POST
-    	public ListBoxModel doFillArtifactItems(@AncestorInPath Item item, @QueryParameter String promotion, @QueryParameter String workspace) {
-            ListBoxModel model = new ListBoxModel();
+    	public ComboBoxModel doFillArtifactItems(@AncestorInPath Item item, @QueryParameter String promotion, @QueryParameter String workspace, @QueryParameter String artifacttype) {
+            ComboBoxModel model = new ComboBoxModel();
             if (item == null) { // no context
             	return model;
             }
             item.checkPermission(Item.CONFIGURE);
         	if (!promotion.isEmpty() && !workspace.isEmpty()) {
 	        	String environment = promotion.split(" ")[0];
-				return TalendLookupHelper.getArtifactList(environment,workspace);
+				return TalendLookupHelper.getArtifactList(environment,workspace, artifacttype);
         	}
         	return model;
 		}

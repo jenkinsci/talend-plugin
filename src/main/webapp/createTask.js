@@ -7,11 +7,12 @@ function changeAutoUpgradable(id, value) {
 }		
 
 function displayParameters(id, value) {
-	if (value == "JOB") {
+	if (value == "STANDARD") {
 		document.getElementById("parameterdiv-" + id).style.display = "block"
 	} else {
 		document.getElementById("parameterdiv-" + id).style.display = "none"
 	}
+	document.getElementById("field-artifact-" + id).getElementsByTagName('input')[0].value = ""
 }		
 
 function displayRuntime(id, value) {

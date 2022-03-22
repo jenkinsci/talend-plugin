@@ -4,6 +4,7 @@ import hudson.Launcher;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
+import hudson.util.ComboBoxModel;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.model.AbstractProject;
@@ -312,13 +313,26 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 		public ListBoxModel doFillArtifactTypeItems(@QueryParameter String environment) {
             ListBoxModel model = new ListBoxModel();
             model.add("Data Service", "DATA_SERVICE");
-            model.add("Job", "JOB");
+            model.add("Job", "STANDARD");
             model.add("Pipeline", "PIPELINE");
             model.add("Route","ROUTE");
             return model;
 		}
 
-		public ListBoxModel doFillRuntimeTypeItems(@AncestorInPath Item item, @QueryParameter String environment, @QueryParameter String artifactType) {
+    	@POST
+    	public ComboBoxModel doFillArtifactItems(@AncestorInPath Item item, @QueryParameter String environment, @QueryParameter String workspace, @QueryParameter String artifactType) {
+            ComboBoxModel model = new ComboBoxModel();
+            if (item == null) { // no context
+            	return model;
+            }
+            item.checkPermission(Item.CONFIGURE);
+        	if (!environment.isEmpty() && !workspace.isEmpty()) {
+				return TalendLookupHelper.getArtifactList(environment,workspace, artifactType);
+        	}
+        	return model;
+		}
+
+    	public ListBoxModel doFillRuntimeTypeItems(@AncestorInPath Item item, @QueryParameter String environment, @QueryParameter String artifactType) {
             ListBoxModel model = new ListBoxModel();
             if (item == null) { // no context
             	return model;
@@ -331,7 +345,7 @@ public class CreateTaskBuilder extends Builder implements SimpleBuildStep {
 		            model.add("Remote Engine", "REMOTE_ENGINE");
 		            model.add("Cluster", "REMOTE_ENGINE_CLUSTER");
 		            break;
-				case "JOB":
+				case "STANDARD":
 		            model.add("Remote Engine", "REMOTE_ENGINE");
 		            model.add("Cluster", "REMOTE_ENGINE_CLUSTER");
 		            model.add("Cloud","CLOUD");

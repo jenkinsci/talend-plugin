@@ -375,8 +375,8 @@ public class TalendLookupHelper {
 	 * @param workspace the workspace
 	 * @return the artifact list
 	 */
-	public static ListBoxModel getArtifactList(String environment, String workspace) {
-		ListBoxModel model = new ListBoxModel();
+	public static ComboBoxModel getArtifactList(String environment, String workspace, String artifacttype) {
+		ComboBoxModel model = new ComboBoxModel();
 		if (environment == null) {
 			LOGGER.warning("environment is null");
 			return model;
@@ -394,7 +394,8 @@ public class TalendLookupHelper {
 			Artifact[] artifacts = artifactService
 					.getByQuery("environmentId=" + environmentId + "&workspaceId=" + workspaceId);
 			for (Artifact artifact : artifacts) {
-				model.add(artifact.getName(), artifact.getName());
+				if (artifacttype == null || artifacttype.isEmpty() || artifacttype.equals(artifact.getType().toUpperCase()))
+				model.add(artifact.getName());
 			}
 		} catch (TalendRestException | IOException ex) {
 			LOGGER.warning(ex.getMessage());
